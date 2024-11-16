@@ -1,5 +1,11 @@
 # Big-Data-Analytics
 
+## How to run
+
+1. Make sure you have docker and Python 3.13.0 installed
+2. Download datasets pointed below
+3. Run start_containers.bat
+
 ## Data
 
 Download from:
