@@ -5,6 +5,10 @@ import argparse
 
 app = Flask(__name__)
 
+app.config["file_path"] = None
+
+app.config["delay"] = None
+
 
 def get_data(file_path, delay):
     with open(file_path, "r") as file:
@@ -16,7 +20,9 @@ def get_data(file_path, delay):
 
 @app.route("/data")
 def data():
-    return Response(get_data(args.file_path, args.delay), mimetype="text/csv")
+    return Response(
+        get_data(app.config["file_path"], app.config["delay"]), mimetype="text/csv"
+    )
 
 
 @app.route("/")
@@ -34,5 +40,7 @@ if __name__ == "__main__":
         help="delay between each row, in seconds, default is 1 second",
     )
     args = parser.parse_args()
+    app.config["file_path"] = args.file_path
+    app.config["delay"] = args.delay
 
     app.run(debug=True, threaded=True)
