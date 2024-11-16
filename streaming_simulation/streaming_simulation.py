@@ -5,10 +5,6 @@ import argparse
 
 app = Flask(__name__)
 
-app.config["file_path"] = None
-
-app.config["delay"] = None
-
 
 def get_data(file_path, delay):
     with open(file_path, "r") as file:
@@ -39,8 +35,22 @@ if __name__ == "__main__":
         default=1,
         help="delay between each row, in seconds, default is 1 second",
     )
+    parser.add_argument(
+        "--port",
+        type=int,
+        default=5000,
+        help="delay between each row, in seconds, default is 1 second",
+    )
+    parser.add_argument(
+        "--address",
+        type=str,
+        default="127.0.0.1",
+        help="delay between each row, in seconds, default is 1 second",
+    )
     args = parser.parse_args()
     app.config["file_path"] = args.file_path
     app.config["delay"] = args.delay
+    app.config["port"] = args.port
+    app.config["address"] = args.address
 
-    app.run(debug=True, threaded=True)
+    app.run(threaded=True, host=app.config["address"], port=app.config["port"])

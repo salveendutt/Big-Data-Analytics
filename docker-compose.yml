@@ -4,7 +4,13 @@ services:
     container_name: nifi
     ports:
       - "8080:8080" 
-      - "5000:5000" 
+      # - "5000:5000" 
     environment:
       - NIFI_WEB_HTTP_PORT=8080
+    restart: unless-stopped
+  streaming_simulation:
+    image: docker.io/library/streaming_simulation:latest
+    container_name: streaming_simulation
+    ports:
+      - "5000:5000"
     restart: unless-stopped
