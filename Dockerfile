@@ -14,4 +14,4 @@ ENV FLASK_APP=app.py
 
 LABEL Name="SteamingSimulation"
 
-CMD ["python", "streaming_simulation.py", "./datasets/Fraud.csv"]
+CMD ["python", "streaming_simulation.py"]

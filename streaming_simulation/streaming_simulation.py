@@ -2,6 +2,7 @@ from flask import Flask, Response
 import csv
 import time
 import argparse
+from config_streaming_simulation import datasets
 
 app = Flask(__name__)
 
@@ -14,21 +15,20 @@ def get_data(file_path, delay):
             time.sleep(delay)
 
 
-@app.route("/data")
-def data():
-    return Response(
-        get_data(app.config["file_path"], app.config["delay"]), mimetype="text/csv"
-    )
+@app.route("/data/<int:slug>")
+def data(slug):
+    if slug < 0 or slug >= len(datasets):
+        return "Invalid dataset", 400
+    return Response(get_data(datasets[slug], app.config["delay"]), mimetype="text/csv")
 
 
 @app.route("/")
 def root():
-    return '<div><a href="/data">Click here to start streaming data</a></div>'
+    return '<div><a href="/data/0">Click here to start streaming data</a></div>'
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Data Streaming Simulation")
-    parser.add_argument("file_path", type=str, help="File path, must be in csv format")
     parser.add_argument(
         "--delay",
         type=int,
@@ -39,16 +39,15 @@ if __name__ == "__main__":
         "--port",
         type=int,
         default=5000,
-        help="delay between each row, in seconds, default is 1 second",
+        help="port number, default is 5000",
     )
     parser.add_argument(
         "--address",
         type=str,
         default="127.0.0.1",
-        help="delay between each row, in seconds, default is 1 second",
+        help="address, default is 127.0.0.1",
     )
     args = parser.parse_args()
-    app.config["file_path"] = args.file_path
     app.config["delay"] = args.delay
     app.config["port"] = args.port
     app.config["address"] = args.address
