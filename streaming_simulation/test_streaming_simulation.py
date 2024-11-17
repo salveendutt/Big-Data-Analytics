@@ -8,12 +8,11 @@ class StreamingSimulationTestCase(unittest.TestCase):
     def setUp(self):
         self.app = app.test_client()
         self.app.testing = True
-        current_path = os.path.dirname(os.path.abspath(__file__))
-        app.config["file_path"] = os.path.join(current_path, "test_data.csv")
         app.config["delay"] = 10
+        app.config["address"] = "127.0.0.1"
 
     def test_data_stream(self):
-        response = self.app.get("/data")
+        response = self.app.get("/data/0")
         self.assertEqual(response.status_code, 200)
         self.assertTrue(response.is_streamed)
         data = next(response.response)

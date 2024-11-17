@@ -44,8 +44,8 @@ if __name__ == "__main__":
     parser.add_argument(
         "--address",
         type=str,
-        default="127.0.0.1",
-        help="address, default is 127.0.0.1",
+        default="0.0.0.0",
+        help="address, default is 0.0.0.0",
     )
     args = parser.parse_args()
     app.config["delay"] = args.delay
