@@ -22,6 +22,7 @@
 \rfoot{\thepage}  % Place page number at the right bottom corner
 \renewcommand{\headrulewidth}{0pt}  % Remove the header line
 
+
 \begin{document}
 
 % Title Page
@@ -54,13 +55,30 @@
 
 \newpage
 
+% Table of contents
+\tableofcontents
+\newpage % Optional: Add a page break after the TOC
+
 \section*{Introduction}
 \addcontentsline{toc}{section}{Introduction}
 \vspace{\baselineskip} % Add an empty line after the section title
 
 The goal of this project is to plan and implement financial transactions processing system which identifies suspicious and fraudulent activity in real-time. Given the large volume of incoming data, the project will utilize big data technologies as well as advanced machine learning algorithms for anomaly detection.
 
-\subsection*{High level description}
+GitHub repository: \href{https://github.com/salveendutt/Big-Data-Analytics}{https://github.com/salveendutt/Big-Data-Analytics}.
+
+\subsection*{Updates for Milestone 2}
+\addcontentsline{toc}{subsection}{Updates for Milestone 2}
+The project architecture layout was updated to better follow the Lambda architecture. In particular: 
+\begin{itemize}
+    \item master data storage was moved to the Batch layer;
+    \item included NoSQL database as a storage for data querying in the Serving layer;
+    \item the architecture schema was updated to better represent the data flow. 
+\end{itemize}
+
+\newpage
+
+\section{High level description}
 
 The main idea is to implement an automatic transactions processing so that anytime a fraudulent activity occurs, the transaction is blocked for further manual review. The aim is to reduce financial losses of the end-users and to enhance the security of online payment, ensuring a safer experience for all customers.
 
@@ -78,9 +96,9 @@ The list below contains main features that we expect to implement for Managers:
 
 \newpage
 
-\subsection*{Data sources}
+\section{Data sources}
 
-Due to strict security regulations on personal and financial data, it is quite challenging to find open source real transactions data both for model training and streaming. Therefore, available synthetic and anonymized datasets will be used. The table below contains description of the preliminary data sources.
+Due to strict security regulations on personal and financial data, it is quite challenging to find open source real transactions data both for model training and streaming. Therefore, available synthetic and anonymized datasets will be used. The table below contains description of the data sources. Each data source is described in more detail in the dedicated subsections.
 
 \begin{table}[h!]
 \centering
@@ -88,13 +106,13 @@ Due to strict security regulations on personal and financial data, it is quite c
 \hline
 \textbf{Data Source} & \textbf{Content} & \textbf{Volume} & \textbf{Link} \\
 \hline
-Fraudulent Transactions Data &  Dataset for predicting fraudulent transactions for a financial company. Available feautres: step, type, amount, nameOrig, oldbalanceOrg, newbalanceOrig, nameDests, oldbalanceDest, newbalanceDest, isFraud, isFlaggedFraud &  6,362,620 rows and 10 columns (493.53 MB) & \href{https://www.kaggle.com/datasets/chitwanmanchanda/fraudulent-transactions-data}{Kaggle} \\
+Fraudulent Transactions Data &  Dataset for predicting fraudulent transactions for a financial company. &  6,362,620 rows and 10 columns (493.53 MB) & \href{https://www.kaggle.com/datasets/chitwanmanchanda/fraudulent-transactions-data}{Kaggle} \\
 \hline
-Credit Card Fraud & Contains features with transactional context like geographical location, transaction medium, and spending behavior relative to the user's history. Available feautres: distance\_from\_home, distance\_from\_last\_transaction, ratio\_to\_median\_purchase\_price, repeat\_retailer, used\_chip, used\_pin\_number, online\_order, fraud & 1,000,000 transactions (58.9 MB) & \href{https://www.openml.org/search?type=data&status=active&id=45955}{OpenML} \\
+Credit Card Fraud & Contains features with transactional context. & 1,000,000 transactions (58.9 MB) & \href{https://www.openml.org/search?type=data&status=active&id=45955}{OpenML} \\
 \hline
-Credit Card Transactions Synthetic Data Generation & A collection of synthetic credit card transaction data. Each transaction record includes a variety of features commonly associated with credit card transactions, including transaction amount, merchant category code, time of transaction, and more & 1,785,308 transactions; 5,000 customers; (153.66 MB) & \href{https://www.kaggle.com/datasets/cgrodrigues/credit-card-transactions-synthetic-data-generation?select=transactions_df.csv}{Kaggle} \\
+Credit Card Transactions Synthetic Data Generation & A collection of synthetic credit card transaction data. & 1,785,308 transactions; 5,000 customers; (153.66 MB) & \href{https://www.kaggle.com/datasets/cgrodrigues/credit-card-transactions-synthetic-data-generation?select=transactions_df.csv}{Kaggle} \\
 \hline
-Credit Card Fraud Detection & Transactions made by credit cards in September 2013 by European cardholders. This dataset presents transactions that occurred in two days. The dataset is highly unbalanced, the positive class (frauds) account for 0.172\% of all transactions. & 284,807 transactions (150.83 MB) & \href{https://www.kaggle.com/datasets/mlg-ulb/creditcardfraud}{Kaggle} \\
+Credit Card Fraud Detection & Transactions made by credit cards in September 2013 by European cardholders. & 284,807 transactions (150.83 MB) & \href{https://www.kaggle.com/datasets/mlg-ulb/creditcardfraud}{Kaggle} \\
 \hline
 \end{tabular}
 \caption{Data sources}
@@ -102,9 +120,47 @@ Credit Card Fraud Detection & Transactions made by credit cards in September 201
 
 Data-streaming API will be implemented from scratch. The assumption is that it will use the above datasets; with a specified time-frame, it will choose a random transaction which was not used for training and push it for further processing. For the testing purposes, the probability of a fraudulent transaction will be set manually to some high enough constant value.
 
-\subsection*{Data processing}
+\subsection{Fraudulent Transactions Data (Kaggle)}
 
-Generally, financial transactions are expected from a different sources, from which we highlight two: Web Transfer and Credit Card. Data from streaming api will be collected and saved as master data in storage. Further processing of it will be divided into three layers:
+TBD - for all data sources the same requirement: 
+
+A detailed description of the data sets from all data sources:
+The category of the data (e.g. location of public transport buses)
+The average number of records and frequency of data inflow
+The features describing every record
+The time period for which data were/will be collected
+Data quality summary
+The format of source data e.g. JSON, CSV, XML
+In the case of data sets and/or streams developed to be used as an input for classification and regression: 
+the list and meaning of independent and dependent features 
+the way raw data has been converted to develop data for machine learning purposes
+
+\subsection{Credit Card Fraud (OpenML)}
+
+TBD
+
+\subsection{Credit Card Transactions Synthetic Data Generation (Kaggle)}
+
+TBD
+
+\subsection{Credit Card Fraud Detection (Kaggle)}
+
+TBD
+
+\newpage
+
+\section{Data acquisition strategy}
+
+TBD - (technology, libraries, API limitations)
+describe streaming api
+
+\section{Data transformation steps and data storage strategy}
+
+TBD - (technology, format)
+
+\section{Project architecture}
+
+We are planning to implement the project based on Lambda Architecture. The main data processing will be divided into three layers:
 
 \begin{enumerate}
     \item Speed Layer (streaming)
@@ -119,19 +175,17 @@ Generally, financial transactions are expected from a different sources, from wh
         \end{itemize}
     \item Serving Layer
         \begin{itemize}
+            \item Stores processed real-time and batch data in NoSQL for fast querying
             \item Client interface highlighting fraud transactions, accepting/blocking transactions;
             \item Data visualization with customizable filters
         \end{itemize}
 \end{enumerate}
 
-
-\subsection*{Project architecture}
-
 Figure 1 shows an outline of the project architecture.
 
 \begin{figure}[htbp]
     \centering
-    \includegraphics[width=0.95\textwidth]{images/Architecture.png}
+    \includegraphics[width=0.95\textwidth]{images/Architecture-M2.png}
     \caption{Project architecture}
     \label{fig:sunset}
 \end{figure}
@@ -142,12 +196,28 @@ The following Big Data platforms will be used:
     \item Apache Hive as a data storage;
     \item Apache Kafka: to work with the streaming data;
     \item Apache Spark: to make the batch processing and model training;
+    \item MongoDB: to store prepared batch view and real-time views for fast quering;
     \item Apache Superset (to be agreed with the supervisor): for data analysis on the user-interface. If the service will not be approved, UI will be implemented from scratch using JS framework, e.g. React.
 \end{itemize}
 
-\subsection*{Preliminary tasks assignment}
+\section{Planned ML tasks}
 
-The table below contains the list of team members and preliminary allocation of tasks to team members,
+TBD
+
+\section{Planned batch and stream processing}
+
+TBD - The planned use of batch and stream processing for individual tasks
+
+\section{Planned way of presenting the results}
+
+TBD - Planned way of presenting the results to end-users in the further part of the project
+
+
+\newpage
+
+\section{Tasks assignment}
+
+The table below contains the list of team members and preliminary allocation of tasks to team members.
 
 \begin{table}[htbp]
 \centering
