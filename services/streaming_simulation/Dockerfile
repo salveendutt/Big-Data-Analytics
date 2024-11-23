@@ -2,7 +2,7 @@ FROM python:3.13.0-slim
 
 WORKDIR /app
 
-COPY ./streaming_simulation /app
+COPY ./services/streaming_simulation /app
 
 COPY ./datasets /app
 

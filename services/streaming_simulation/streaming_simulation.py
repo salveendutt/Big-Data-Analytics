@@ -8,7 +8,7 @@ import random
 app = Flask(__name__)
 
 
-readers = [csv.reader(open(dataset, "r")) for dataset in datasets]
+readers = [list(csv.reader(open(dataset, "r"))) for dataset in datasets]
 
 
 def get_data(slug, delay):
@@ -23,7 +23,9 @@ def data(slug):
         return "Invalid dataset", 400
     reader = readers[slug]
     random_row = random.choice(reader)
-    return ",".join(random_row) + "\n"
+    header = readers[slug][0]
+    data = dict(zip(header, random_row))
+    return data
 
 
 @app.route("/stream/<int:slug>")
