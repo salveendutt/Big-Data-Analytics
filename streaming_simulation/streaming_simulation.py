@@ -2,7 +2,7 @@ from flask import Flask, Response
 import csv
 import time
 import argparse
-from config_streaming_simulation import datasets
+from config_streaming_simulation import datasets, port
 
 app = Flask(__name__)
 
@@ -38,8 +38,8 @@ if __name__ == "__main__":
     parser.add_argument(
         "--port",
         type=int,
-        default=5000,
-        help="port number, default is 5000",
+        default=port,
+        help="port number, default is saved in config_streaming_simulation.py",
     )
     parser.add_argument(
         "--address",
