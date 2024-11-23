@@ -2,24 +2,37 @@ from flask import Flask, Response
 import csv
 import time
 import argparse
-from config_streaming_simulation import datasets
+from config_streaming_simulation import datasets, port
+import random
 
 app = Flask(__name__)
 
 
-def get_data(file_path, delay):
-    with open(file_path, "r") as file:
-        reader = csv.reader(file)
-        for row in reader:
-            yield ",".join(row) + "\n"
-            time.sleep(delay)
+readers = [list(csv.reader(open(dataset, "r"))) for dataset in datasets]
+
+
+def get_data(slug, delay):
+    for row in readers[slug]:
+        yield ",".join(row) + "\n"
+        time.sleep(delay)
 
 
 @app.route("/data/<int:slug>")
 def data(slug):
     if slug < 0 or slug >= len(datasets):
         return "Invalid dataset", 400
-    return Response(get_data(datasets[slug], app.config["delay"]), mimetype="text/csv")
+    reader = readers[slug]
+    random_row = random.choice(reader)
+    header = readers[slug][0]
+    data = dict(zip(header, random_row))
+    return data
+
+
+@app.route("/stream/<int:slug>")
+def stream(slug):
+    if slug < 0 or slug >= len(datasets):
+        return "Invalid dataset", 400
+    return Response(get_data(slug, app.config["delay"]), mimetype="text/csv")
 
 
 @app.route("/")
@@ -38,8 +51,8 @@ if __name__ == "__main__":
     parser.add_argument(
         "--port",
         type=int,
-        default=5000,
-        help="port number, default is 5000",
+        default=port,
+        help="port number, default is saved in config_streaming_simulation.py",
     )
     parser.add_argument(
         "--address",
