@@ -120,6 +120,8 @@ Due to strict security regulations on personal and financial data, it is quite c
 
 Data-streaming API was implemented from scratch. The assumption was that it would use the above datasets; with a specified time-frame, it would choose a random transaction which was not used for training and push it for further processing. For the testing purposes, the probability of a fraudulent transaction will be set manually to some high enough constant value. Details description of the implented streaming API can be found in chapter 3.
 
+The content of the datasets is extremely different which makes it impossible to combine them into a single dataset. Therefore, each dataset will be treated separately for both streaming and ML training.
+
 
 \newpage
 
@@ -163,7 +165,7 @@ The following transformation should be done to pass dataset to the ML models:
 \begin{enumerate}
     \item 'type' column values CASH-IN, CASH-OUT, DEBIT, PAYMENT and TRANSFER transformed to 1, 2, 3, 4 and 5 respectively;
     \item a new attribute 'isMerchant' is calculated. 1 if 'nameDest' starts with 'M', 0 - otherwise.
-  \end{enumerate}
+\end{enumerate}
 
 Generally, the dataset and clean and structured, no other preprocessing, except for the described above is necessary. Potential issue is that it is highly unbalanced (less than 1\% of fraud transactions), and contains quite small amount of features (6) for model training. 
 
@@ -208,13 +210,79 @@ The target feature balance is much better than for the previous dataset: 8.7\% o
 
 \subsection{Credit Card Transactions Synthetic Data Generation (Kaggle)}
 
-TBD
+This dataset is a collection of synthetic credit card transaction data. The data is designed to mimic the characteristics of real credit card transactions while ensuring privacy and compliance with data protection regulations such as the General Data Protection Regulation (GDPR). It contains 1,785,308 transactions for 5000 customers.
+
+\begin{table}[ht!]
+    \centering
+    \begin{tabular}{|p{5.5cm}|p{8cm}|p{2cm}|}
+    \hline
+    \textbf{Column} & \textbf{Content} & \textbf{Type} \\
+    \hline
+    transaction\_id & Random string containing specific transactions id & str \\
+    \hline
+    post\_ts & Date and time of the transaction & str \\
+    \hline
+    customer\_id & Specific customer id & str \\
+    \hline
+    bin & Bank Identification Number & int \\
+    \hline
+    terminal\_id & Specific terminal id & int \\
+    \hline
+    amt & Transaction amount & float \\
+    \hline
+    entry\_mode & Mode of the transaction. Possible values are Contactless, Chip and Swipe. & str \\
+    \hline 
+    fraud & Target variable containing 1 for fraudulent transaction and 0 otherwise & int \\
+    \hline
+    fraud\_scenario & Additional label for the transaction. 97\% of the dataset has value 0. No specific description for each scenario is provided.  & int, [0, 1, 2] \\
+    \hline
+    mean\_amount & Average transaction amout for a specific customer  & float \\
+    \hline
+    std\_amount & Standard deviation of the transaction amout for a specific customer  & float \\
+    \hline
+    mean\_nb\_tx\_per\_day & Mean number of transactions per day for a specific customer & float \\
+    \hline
+    customer\_bin & Bank Identification Number of a customer & int \\
+    \hline
+    \end{tabular}
+    \caption{Columns description. Dataset 3: 'Credit Card Transactions Synthetic Data Generation' from Kaggle}
+\end{table}
+
+Like other datasets, it is quite unbalanced with 3\% of fraudulent transactions. The following preprocessing should be done, before passing rows to ML task:
+\begin{enumerate}
+    \item 'entry\_mode' column values Contactless, Chip and Swipe transformed to 1, 2, and 3 respectively;
+    \item 'amt' renamed to 'amount',
+    \item 'fraud' renamed to 'isFraud',
+    \item transaction data itself contains only customer id. Therefore, an additional step is to find the customer and add related features to the output.
+\end{enumerate}
 
 \newpage
 
 \subsection{Credit Card Fraud Detection (Kaggle)}
 
-TBD
+The dataset contains transactions made by credit cards in September 2013 by European cardholders. It contains 284,807 transactions with only 492 (less than 1\%) of fraud ones. Due to confidentiality issues, the dataset contains only numerical input variables which are the result of a PCA transformation.
+
+\begin{table}[ht!]
+    \centering
+    \begin{tabular}{|p{5.5cm}|p{8cm}|p{2cm}|}
+    \hline
+    \textbf{Column} & \textbf{Content} & \textbf{Type} \\
+    \hline
+    Time & The seconds elapsed between the transaction and the first transaction in the dataset & int \\
+    \hline
+    V1 ... V28 & The principal components obtained with PCA. The original features and more background information about the data are not provided. & float \\
+    \hline
+    Amount & Transaction amount & float \\
+    \hline
+    Class & Target variable; 1 for fraudulent transaction and 0 otherwise & int, [0, 1] \\
+    \hline
+    \end{tabular}
+    \caption{Columns description. Dataset 4: 'Credit Card Fraud Detection' from Kaggle}
+\end{table}
+
+This dataset contains relatively small amount of data compared to others (about 280k of transactions). Therefore, we are planning to keep it as an additional dataset in case of any issues with others.
+
+Since the data has already been processed, the only necessary transormation is to rename columns 'Amount' and 'Class' to 'amount', 'isFraud' respectively.
 
 \newpage
 
@@ -223,7 +291,7 @@ TBD
 TBD - (technology, libraries, API limitations)
 describe streaming api
 
-\section{Data transformation steps and data storage strategy}
+\section{Data storage strategy}
 
 TBD - (technology, format)
 
