@@ -19,3 +19,12 @@ Download from:
 3. https://www.kaggle.com/datasets/cgrodrigues/credit-card-transactions-synthetic-data-generation?select=transactions_df.csv
 
 and preferably place unpacked files in the root folder in 'datasets' folder.
+
+Expected structure:
+.
+├── datasets
+│   ├── Fraud.csv // dataset 1: 'Fraudulent Transactions Data' from Kaggle
+│   └── Credit_Card_Fraud_.arff // dataset 2: 'Credit_Card_Fraud_' from OpenML
+│   └── ... // dataset 3: 'Credit Card Transactions Synthetic Data Generation' from Kaggle
+│   └── ... // dataset 4: 'Credit Card Fraud Detection' from Kaggle
+├── ...
