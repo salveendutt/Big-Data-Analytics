@@ -21,6 +21,7 @@ Download from:
 and preferably place unpacked files in the root folder in 'datasets' folder.
 
 Expected structure:
+```
 .
 ├── datasets
 │   ├── Fraud.csv // dataset 1: 'Fraudulent Transactions Data' from Kaggle
@@ -31,3 +32,4 @@ Expected structure:
 │   |   └── transactions_df.csv
 │   └── creditcard.csv // dataset 4: 'Credit Card Fraud Detection' from Kaggle
 ├── ...
+```
