@@ -102,46 +102,115 @@ Due to strict security regulations on personal and financial data, it is quite c
 
 \begin{table}[h!]
 \centering
-\begin{tabular}{|p{5cm}|p{6cm}|p{3cm}|p{1.5cm}|}
+\begin{tabular}{|p{5cm}|p{4cm}|p{3cm}|p{2cm}|p{1.5cm}|}
 \hline
-\textbf{Data Source} & \textbf{Content} & \textbf{Volume} & \textbf{Link} \\
+\textbf{Data Source} & \textbf{Content} & \textbf{Volume} &  \textbf{Fraud, \%} & \textbf{Link} \\
 \hline
-Fraudulent Transactions Data &  Dataset for predicting fraudulent transactions for a financial company. &  6,362,620 rows and 10 columns (493.53 MB) & \href{https://www.kaggle.com/datasets/chitwanmanchanda/fraudulent-transactions-data}{Kaggle} \\
+1. Fraudulent Transactions Data &  Dataset for predicting fraudulent transactions for a financial company. &  6,362,620 rows and 10 columns (493.53 MB) & 0.13\% & \href{https://www.kaggle.com/datasets/chitwanmanchanda/fraudulent-transactions-data}{Kaggle} \\
 \hline
-Credit Card Fraud & Contains features with transactional context. & 1,000,000 transactions (58.9 MB) & \href{https://www.openml.org/search?type=data&status=active&id=45955}{OpenML} \\
+2. Credit Card Fraud & Contains features with transactional context. & 1,000,000 transactions (58.9 MB) & 8.7\% & \href{https://www.openml.org/search?type=data&status=active&id=45955}{OpenML} \\
 \hline
-Credit Card Transactions Synthetic Data Generation & A collection of synthetic credit card transaction data. & 1,785,308 transactions; 5,000 customers; (153.66 MB) & \href{https://www.kaggle.com/datasets/cgrodrigues/credit-card-transactions-synthetic-data-generation?select=transactions_df.csv}{Kaggle} \\
+3. Credit Card Transactions Synthetic Data Generation & A collection of synthetic credit card transaction data. & 1,785,308 transactions; 5,000 customers; (153.66 MB) & 3\% & \href{https://www.kaggle.com/datasets/cgrodrigues/credit-card-transactions-synthetic-data-generation?select=transactions_df.csv}{Kaggle} \\
 \hline
-Credit Card Fraud Detection & Transactions made by credit cards in September 2013 by European cardholders. & 284,807 transactions (150.83 MB) & \href{https://www.kaggle.com/datasets/mlg-ulb/creditcardfraud}{Kaggle} \\
+4. Credit Card Fraud Detection & Transactions made by credit cards in September 2013 by European cardholders. & 284,807 transactions (150.83 MB) & 0.17\% & \href{https://www.kaggle.com/datasets/mlg-ulb/creditcardfraud}{Kaggle} \\
 \hline
 \end{tabular}
 \caption{Data sources}
 \end{table}
 
-Data-streaming API will be implemented from scratch. The assumption is that it will use the above datasets; with a specified time-frame, it will choose a random transaction which was not used for training and push it for further processing. For the testing purposes, the probability of a fraudulent transaction will be set manually to some high enough constant value.
+Data-streaming API was implemented from scratch. The assumption was that it would use the above datasets; with a specified time-frame, it would choose a random transaction which was not used for training and push it for further processing. For the testing purposes, the probability of a fraudulent transaction will be set manually to some high enough constant value. Details description of the implented streaming API can be found in chapter 3.
+
+
+\newpage
 
 \subsection{Fraudulent Transactions Data (Kaggle)}
 
-TBD - for all data sources the same requirement: 
+Dataset contains transactions for a financial company, indicating whether it is fraudulent or not. Data for the case is available in CSV format having 6362620 rows and 10 columns. Full column description is presented in the table 2.
 
-A detailed description of the data sets from all data sources:
-The category of the data (e.g. location of public transport buses)
-The average number of records and frequency of data inflow
-The features describing every record
-The time period for which data were/will be collected
-Data quality summary
-The format of source data e.g. JSON, CSV, XML
-In the case of data sets and/or streams developed to be used as an input for classification and regression: 
-the list and meaning of independent and dependent features 
-the way raw data has been converted to develop data for machine learning purposes
+\begin{table}[ht!]
+\centering
+\begin{tabular}{|p{4cm}|p{10cm}|p{2cm}|}
+\hline
+\textbf{Column} & \textbf{Content} & \textbf{Type} \\
+\hline
+step & maps a unit of time in the real world. In this case 1 step is 1 hour of time. Total steps 744 (30 days simulation) & int \\
+\hline
+type & type of the transaction. Available values: CASH-IN, CASH-OUT, DEBIT, PAYMENT and TRANSFER & str \\
+\hline
+amount & amount of the transaction in local currency & float \\
+\hline
+nameOrig & customer who started the transaction & str \\
+\hline
+oldbalanceOrg & initial balance before the transaction & float \\
+\hline
+newbalanceOrig & new balance after the transaction & float \\
+\hline
+nameDest & customer who is the recipient of the transaction & str \\
+\hline
+oldbalanceDest & initial balance recipient before the transaction. Note that there is not information for customers that start with M (Merchants) & float \\
+\hline
+newbalanceDest & new balance recipient after the transaction. Note that there is not information for customers that start with M (Merchants) & float \\
+\hline
+isFraud & this is the transactions made by the fraudulent agents inside the simulation. In this specific dataset the fraudulent behavior of the agents aims to profit by taking control or customers accounts and try to empty the funds by transferring to another account and then cashing out of the system & int \\
+\hline
+isFlaggedFraud & the business model aims to control massive transfers from one account to another and flags illegal attempts. An illegal attempt in this dataset is an attempt to transfer more than 200.000 in a single transaction & int \\
+\hline
+\end{tabular}
+\caption{Columns description. Dataset 1: 'Fraudulent Transactions Data' from Kaggle}
+\end{table}
+
+The following transformation should be done to pass dataset to the ML models:
+\begin{enumerate}
+    \item 'type' column values CASH-IN, CASH-OUT, DEBIT, PAYMENT and TRANSFER transformed to 1, 2, 3, 4 and 5 respectively;
+    \item a new attribute 'isMerchant' is calculated. 1 if 'nameDest' starts with 'M', 0 - otherwise.
+  \end{enumerate}
+
+Generally, the dataset and clean and structured, no other preprocessing, except for the described above is necessary. Potential issue is that it is highly unbalanced (less than 1\% of fraud transactions), and contains quite small amount of features (6) for model training. 
+
+\newpage
 
 \subsection{Credit Card Fraud (OpenML)}
 
-TBD
+This dataset captures transaction patterns and behaviors that could indicate potential fraud in card transactions. The data is composed of several features designed to reflect the transactional context such as geographical location, transaction medium, and spending behavior relative to the user's history.
+
+
+
+\begin{table}[ht!]
+    \centering
+    \begin{tabular}{|p{5.5cm}|p{8cm}|p{2cm}|}
+    \hline
+    \textbf{Column} & \textbf{Content} & \textbf{Type} \\
+    \hline
+    distance\_from\_home & This is a numerical feature representing the geographical distance in kilometers between the transaction location and the cardholder's home address. & float \\
+    \hline
+    distance\_from\_last\_transaction & This numerical attribute measures the distance in kilometers from the location of the last transaction to the current transaction location. & float \\
+    \hline
+    ratio\_to\_median\_purchase\_price & A numeric ratio that compares the transaction's price to the median purchase price of the user's transaction history. & float \\
+    \hline
+    repeat\_retailer & A binary attribute where '1' signifies that the transaction was conducted at a retailer previously used by the cardholder, and '0' indicates a new retailer. & [0, 1] \\
+    \hline
+    used\_chip & This binary feature indicates whether the transaction was made using a chip (1) or not (0). & [0, 1] \\
+    \hline
+    used\_pin\_number &  Another binary feature, where '1' signifies the use of a PIN number for the transaction, and '0' shows no PIN number was used. & [0, 1] \\
+    \hline
+    online\_order & This attribute identifies whether the purchase was made online ('1') or offline ('0'). & [0, 1] \\
+    \hline
+    fraud & A binary target variable indicating whether the transaction was fraudulent ('1') or not ('0'). & [0, 1] \\
+    \hline
+    \end{tabular}
+    \caption{Columns description. Dataset 2: 'Credit\_Card\_Fraud\_' from OpenML}
+\end{table}
+
+The whole dataset is in the numeric form, therefore, no additional preprocessing is necessary. The only transformation is to rename the target variable to 'isFraud' To match other datasets format.
+The target feature balance is much better than for the previous dataset: 8.7\% of fraud. Additional complication is that feature 'amount' is not available. A ratio to the median purchase of the same customer is provided instead.
+
+\newpage
 
 \subsection{Credit Card Transactions Synthetic Data Generation (Kaggle)}
 
 TBD
+
+\newpage
 
 \subsection{Credit Card Fraud Detection (Kaggle)}
 

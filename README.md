@@ -30,6 +30,6 @@ Expected structure:
 │   |   └── customer_profiles_table.csv
 │   |   └── terminal_profiles_table.csv
 │   |   └── transactions_df.csv
-│   └── creditcard.csv // dataset 4: 'Credit Card Fraud Detection' from Kaggle
+│   └── creditcard.csv // dataset 4: 'Credit Card Fraud Detection' from Kaggle (optional)
 ├── ...
 ```
