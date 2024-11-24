@@ -3,6 +3,10 @@
 datasets
 .vscode
 
+/services/nifi/conf/archive/
+
+passes.txt
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
