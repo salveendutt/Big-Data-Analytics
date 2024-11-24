@@ -32,6 +32,7 @@ def preprocess_row_2(row):
   }
 
 def preprocess_row_3(row):
+  # TODO: fetch customer information; calculate number of customer transactions today
   entry_modes = { 'Contactless': 1, 'Chip': 2, 'Swipe': 3 }
   return {
     'customer_id': row['customer_id'],
