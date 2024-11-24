@@ -37,6 +37,9 @@ services:
     restart: unless-stopped
     command: >
       /opt/hive/bin/hive --service hiveserver2
+    volumes:
+      - ./services/hive/conf:/opt/hive/conf
+      - ./services/hive/tez/conf:/opt/hive/tez/conf
 
   metastore-standalone:
     image: apache/hive:4.0.0
@@ -51,6 +54,9 @@ services:
     restart: unless-stopped
     command: >
       /opt/hive/bin/hive --service metastore
+    volumes:
+      - ./services/hive-metastore/conf:/opt/hive/conf
+      - ./services/hive-metastore/tez/conf:/opt/hive/tez/conf
 
 networks:
   custom_net:
