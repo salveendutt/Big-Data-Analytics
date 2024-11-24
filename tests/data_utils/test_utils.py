@@ -1,10 +1,3 @@
-import pytest
-import sys
-import os
-
-# Add the project root to sys.path
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../..')))
-
 from src.data_utils.utils import preprocess_row_1, preprocess_row_2, preprocess_row_3, preprocess_row_4
 
 def test_preprocess_row_1():
