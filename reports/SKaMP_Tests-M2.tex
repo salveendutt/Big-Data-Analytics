@@ -42,6 +42,8 @@ GitHub repository: \href{https://github.com/salveendutt/Big-Data-Analytics}{http
 \hline
 \textbf{Test objective} & \textbf{Steps} & \textbf{Expected Result} & \textbf{Actual Result} \\
 \hline
+Verify correct setup of the stream & Run 'pytest' from the root folder & Data stream is configured as expected; Incoming data is not null; Returned status code - 200 & PASSED. The screenshot is provided in Fig. 1 \\
+\hline
 Verify data incoming from stream API & 1. Start the server using start\_containers.bat; 2. Navigate to http://localhost:5000 & Incoming data is stored in the file & TBD: screenshot \\
 \hline
 \end{tabular}
@@ -50,15 +52,19 @@ Verify data incoming from stream API & 1. Start the server using start\_containe
 
 \section{Data pre-processing}
 
-TBD
-
 \begin{table}[htbp]
 \centering
 \begin{tabular}{|p{3cm}|p{4cm}|p{4cm}|p{5cm}|}
 \hline
 \textbf{Test objective} & \textbf{Steps} & \textbf{Expected Result} & \textbf{Actual Result} \\
 \hline
-Verify correct data pre-processing of dataset 1 & Run 'pytest' from the root folder & Incoming data is stored in the file & TBD: screenshot \\
+Verify correct data pre-processing of dataset 1 & Run 'pytest' from the root folder & Feature 'type' is correctly transformed into numeric value (5 cases); Feature 'isMerchant' is correctly prepared (2 cases) & PASSED. The screenshot is provided in Fig. 1 \\
+\hline
+Verify correct data pre-processing of dataset 2 & Run 'pytest' from the root folder & Numeric boolean values are transformed to int from float (4 cases) & PASSED. The screenshot is provided in Fig. 1 \\
+\hline
+Verify correct data pre-processing of dataset 3 & Run 'pytest' from the root folder & Feature 'entry\_mode' is correctly transformed into numeric value (4 cases); Unnecessary features are omitted. & PASSED. The screenshot is provided in Fig. 1 \\
+\hline
+Verify correct data pre-processing of dataset 4 & Run 'pytest' from the root folder & Features 'Amount', 'Class' are renamed to 'amount' and 'isFraud'; Extra features are removed & PASSED. The screenshot is provided in Fig. 1 \\
 \hline
 \end{tabular}
 \caption{Data pre-processing tests}
@@ -73,6 +79,11 @@ Verify correct data pre-processing of dataset 1 & Run 'pytest' from the root fol
 
 Unit testing is included in the CI pipeline on GitHub and must be successful before any merge into the main branch.
 
-
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.95\textwidth]{images/github-checks-M2.PNG}
+  \caption{GitHub checks before merge}
+  \label{fig:sunset}
+\end{figure}
 
 \end{document}
