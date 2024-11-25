@@ -42,13 +42,27 @@ GitHub repository: \href{https://github.com/salveendutt/Big-Data-Analytics}{http
 \hline
 \textbf{Test objective} & \textbf{Steps} & \textbf{Expected Result} & \textbf{Actual Result} \\
 \hline
-Verify correct setup of the stream & Run 'pytest' from the root folder & Data stream is configured as expected; Incoming data is not null; Returned status code - 200 & PASSED. The screenshot is provided in Fig. 1 \\
+Verify data incoming from stream API & 1. Start the server using start\_containers.bat; 2. Navigate to http://localhost:5000 & Incoming data is available on /data/0 & Passed. The screenshot is provided in Fig.1 and Fig.2 \\
 \hline
-Verify data incoming from stream API & 1. Start the server using start\_containers.bat; 2. Navigate to http://localhost:5000 & Incoming data is stored in the file & TBD: screenshot \\
+Verify correct setup of the stream & Run 'pytest' from the root folder & Data stream is configured as expected; Incoming data is not null; Returned status code - 200 & PASSED. The screenshot is provided in Fig. 3 \\
 \hline
 \end{tabular}
 \caption{Data acquisition tests}
 \end{table}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.8\textwidth]{images/test-stream-M2.png}
+  \caption{Data incoming via the stream}
+  \label{fig:sunset}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.95\textwidth]{images/nifi-M2.png}
+  \caption{NiFi Data Provenance}
+  \label{fig:sunset}
+\end{figure}
 
 \section{Data pre-processing}
 
@@ -58,13 +72,13 @@ Verify data incoming from stream API & 1. Start the server using start\_containe
 \hline
 \textbf{Test objective} & \textbf{Steps} & \textbf{Expected Result} & \textbf{Actual Result} \\
 \hline
-Verify correct data pre-processing of dataset 1 & Run 'pytest' from the root folder & Feature 'type' is correctly transformed into numeric value (5 cases); Feature 'isMerchant' is correctly prepared (2 cases) & PASSED. The screenshot is provided in Fig. 1 \\
+Verify correct data pre-processing of dataset 1 & Run 'pytest' from the root folder & Feature 'type' is correctly transformed into numeric value (5 cases); Feature 'isMerchant' is correctly prepared (2 cases) & PASSED. The screenshot is provided in Fig. 3 \\
 \hline
-Verify correct data pre-processing of dataset 2 & Run 'pytest' from the root folder & Numeric boolean values are transformed to int from float (4 cases) & PASSED. The screenshot is provided in Fig. 1 \\
+Verify correct data pre-processing of dataset 2 & Run 'pytest' from the root folder & Numeric boolean values are transformed to int from float (4 cases) & PASSED. The screenshot is provided in Fig. 3 \\
 \hline
-Verify correct data pre-processing of dataset 3 & Run 'pytest' from the root folder & Feature 'entry\_mode' is correctly transformed into numeric value (4 cases); Unnecessary features are omitted. & PASSED. The screenshot is provided in Fig. 1 \\
+Verify correct data pre-processing of dataset 3 & Run 'pytest' from the root folder & Feature 'entry\_mode' is correctly transformed into numeric value (4 cases); Unnecessary features are omitted. & PASSED. The screenshot is provided in Fig. 3 \\
 \hline
-Verify correct data pre-processing of dataset 4 & Run 'pytest' from the root folder & Features 'Amount', 'Class' are renamed to 'amount' and 'isFraud'; Extra features are removed & PASSED. The screenshot is provided in Fig. 1 \\
+Verify correct data pre-processing of dataset 4 & Run 'pytest' from the root folder & Features 'Amount', 'Class' are renamed to 'amount' and 'isFraud'; Extra features are removed & PASSED. The screenshot is provided in Fig. 3 \\
 \hline
 \end{tabular}
 \caption{Data pre-processing tests}
@@ -77,7 +91,7 @@ Verify correct data pre-processing of dataset 4 & Run 'pytest' from the root fol
   \label{fig:sunset}
 \end{figure}
 
-Unit testing is included in the CI pipeline on GitHub and must be successful before any merge into the main branch.
+Unit testing is included in the CI/CD pipeline on GitHub and must be successful before any merge into the main branch.
 
 \begin{figure}[htbp]
   \centering
