@@ -1,6 +1,6 @@
 from src.data_utils.utils import preprocess_row_1, preprocess_row_2, preprocess_row_3, preprocess_row_4
 
-def test_preprocess_row_1():
+def test_preprocess_1_payment():
     raw = {
         'step': 1,
         'type': 'PAYMENT',
@@ -19,6 +19,131 @@ def test_preprocess_row_1():
         'oldbalanceOrg': 170136.0,
         'newbalanceOrig': 160296.36,
         'isMerchant': 1,
+        'isFlaggedFraud': 0,
+        'isFraud': 0
+    }
+    actual = preprocess_row_1(raw)
+    assert actual == expected
+
+def test_preprocess_1_cash_in():
+    raw = {
+        'step': 1,
+        'type': 'CASH-IN',
+        'amount': 9839.64,
+        'oldbalanceOrg': 170136.0,
+        'newbalanceOrig': 160296.36,
+        'nameDest': 'B1979787155',
+        'oldbalanceDest': 0.0,
+        'newbalanceDest': 0.0,
+        'isFlaggedFraud': 0,
+        'isFraud': 0
+    }
+    expected = {
+        'type': 1,
+        'amount': 9839.64,
+        'oldbalanceOrg': 170136.0,
+        'newbalanceOrig': 160296.36,
+        'isMerchant': 0,
+        'isFlaggedFraud': 0,
+        'isFraud': 0
+    }
+    actual = preprocess_row_1(raw)
+    assert actual == expected
+
+def test_preprocess_1_cash_out():
+    raw = {
+        'step': 1,
+        'type': 'CASH-OUT',
+        'amount': 9839.64,
+        'oldbalanceOrg': 170136.0,
+        'newbalanceOrig': 160296.36,
+        'nameDest': 'B1979787155',
+        'oldbalanceDest': 0.0,
+        'newbalanceDest': 0.0,
+        'isFlaggedFraud': 0,
+        'isFraud': 0
+    }
+    expected = {
+        'type': 2,
+        'amount': 9839.64,
+        'oldbalanceOrg': 170136.0,
+        'newbalanceOrig': 160296.36,
+        'isMerchant': 0,
+        'isFlaggedFraud': 0,
+        'isFraud': 0
+    }
+    actual = preprocess_row_1(raw)
+    assert actual == expected
+
+def test_preprocess_1_debit():
+    raw = {
+        'step': 1,
+        'type': 'DEBIT',
+        'amount': 9839.64,
+        'oldbalanceOrg': 170136.0,
+        'newbalanceOrig': 160296.36,
+        'nameDest': 'B1979787155',
+        'oldbalanceDest': 0.0,
+        'newbalanceDest': 0.0,
+        'isFlaggedFraud': 0,
+        'isFraud': 0
+    }
+    expected = {
+        'type': 3,
+        'amount': 9839.64,
+        'oldbalanceOrg': 170136.0,
+        'newbalanceOrig': 160296.36,
+        'isMerchant': 0,
+        'isFlaggedFraud': 0,
+        'isFraud': 0
+    }
+    actual = preprocess_row_1(raw)
+    assert actual == expected
+
+def test_preprocess_1_debit():
+    raw = {
+        'step': 1,
+        'type': 'TRANSFER',
+        'amount': 9839.64,
+        'oldbalanceOrg': 170136.0,
+        'newbalanceOrig': 160296.36,
+        'nameDest': 'B1979787155',
+        'oldbalanceDest': 0.0,
+        'newbalanceDest': 0.0,
+        'isFlaggedFraud': 0,
+        'isFraud': 0
+    }
+    expected = {
+        'type': 5,
+        'amount': 9839.64,
+        'oldbalanceOrg': 170136.0,
+        'newbalanceOrig': 160296.36,
+        'isMerchant': 0,
+        'isFlaggedFraud': 0,
+        'isFraud': 0
+    }
+    actual = preprocess_row_1(raw)
+    assert actual == expected
+
+def test_preprocess_1_unknown():
+    raw = {
+        'step': 1,
+        'type': 'UNKNOWN',
+        'amount': 9839.64,
+        'oldbalanceOrg': 170136.0,
+        'newbalanceOrig': 160296.36,
+        'nameDest': 'B1979787155',
+        'oldbalanceDest': 0.0,
+        'newbalanceDest': 0.0,
+        'isFlaggedFraud': 0,
+        'isFraud': 0
+    }
+    expected = {
+        'type': 0,
+        'amount': 9839.64,
+        'oldbalanceOrg': 170136.0,
+        'newbalanceOrig': 160296.36,
+        'isMerchant': 0,
         'isFlaggedFraud': 0,
         'isFraud': 0
     }
@@ -47,7 +172,7 @@ def test_preprocess_row_2():
     actual = preprocess_row_2(raw)
     assert actual == expected
 
-def test_preprocess_row_3():
+def test_preprocess_3_contactless():
     raw = {
         'transaction_id': 'OyWUo6ruReKft',
         'post_ts': '2023-02-01 00:00:30',
@@ -64,6 +189,72 @@ def test_preprocess_row_3():
         'bin': 424208,
         'amount': 38.97,
         'entry_mode': 1,
+        'isFraud': 0
+    }
+    actual = preprocess_row_3(raw)
+    assert actual == expected
+
+def test_preprocess_3_chip():
+    raw = {
+        'transaction_id': 'OyWUo6ruReKft',
+        'post_ts': '2023-02-01 00:00:30',
+        'customer_id': 'C00005143',
+        'bin': 424208,
+        'terminal_id': 'T001014',
+        'amt': 38.97,
+        'entry_mode': 'Chip',
+        'fraud': 0, 
+        'fraud_scenario': 0
+    }
+    expected = {
+        'customer_id': 'C00005143',
+        'bin': 424208,
+        'amount': 38.97,
+        'entry_mode': 2,
+        'isFraud': 0
+    }
+    actual = preprocess_row_3(raw)
+    assert actual == expected
+
+def test_preprocess_3_swipe():
+    raw = {
+        'transaction_id': 'OyWUo6ruReKft',
+        'post_ts': '2023-02-01 00:00:30',
+        'customer_id': 'C00005143',
+        'bin': 424208,
+        'terminal_id': 'T001014',
+        'amt': 38.97,
+        'entry_mode': 'Swipe',
+        'fraud': 0, 
+        'fraud_scenario': 0
+    }
+    expected = {
+        'customer_id': 'C00005143',
+        'bin': 424208,
+        'amount': 38.97,
+        'entry_mode': 3,
+        'isFraud': 0
+    }
+    actual = preprocess_row_3(raw)
+    assert actual == expected
+
+def test_preprocess_3_unknown():
+    raw = {
+        'transaction_id': 'OyWUo6ruReKft',
+        'post_ts': '2023-02-01 00:00:30',
+        'customer_id': 'C00005143',
+        'bin': 424208,
+        'terminal_id': 'T001014',
+        'amt': 38.97,
+        'entry_mode': 'UNKNOWN',
+        'fraud': 0, 
+        'fraud_scenario': 0
+    }
+    expected = {
+        'customer_id': 'C00005143',
+        'bin': 424208,
+        'amount': 38.97,
+        'entry_mode': 0,
         'isFraud': 0
     }
     actual = preprocess_row_3(raw)
