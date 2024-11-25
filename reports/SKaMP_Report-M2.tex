@@ -68,8 +68,8 @@ The goal of this project is to plan and implement financial transactions process
 
 GitHub repository: \href{https://github.com/salveendutt/Big-Data-Analytics}{https://github.com/salveendutt/Big-Data-Analytics}.
 
-\subsection*{Updates for Milestone 2}
-\addcontentsline{toc}{subsection}{Updates for Milestone 2}
+\subsection*{Updates from Milestone 1}
+\addcontentsline{toc}{subsection}{Updates from Milestone 1}
 The project architecture layout was updated to better follow the Lambda architecture. In particular: 
 \begin{itemize}
     \item master data storage was moved to the Batch layer;
@@ -175,8 +175,6 @@ Generally, the dataset and clean and structured, no other preprocessing, except 
 \subsection{Credit Card Fraud (OpenML)}
 
 This dataset captures transaction patterns and behaviors that could indicate potential fraud in card transactions. The data is composed of several features designed to reflect the transactional context such as geographical location, transaction medium, and spending behavior relative to the user's history.
-
-
 
 \begin{table}[ht!]
     \centering
@@ -289,8 +287,17 @@ Since the data has already been processed, the only necessary transormation is t
 
 \section{Data acquisition strategy}
 
-TBD - (technology, libraries, API limitations)
-describe streaming api
+Due to the lack of publicly available open streaming APIs, we designed and implemented a custom streaming API for real-time fraud detection. Stream API is connected to the NiFi for futher data collection and preprocessing. The following technological stack is used for the data acquisition:
+
+\begin{enumerate}
+    \item Python,
+    \item Flask  - for the stream API,
+    \item Apache NiFi,
+    \item Docker - for deployment,
+    \item Apache Hive (to be properly configured for M3)
+\end{enumerate}
+
+When server is started, stream api is avalable on localhost:5000/data/:dataset\_id. Data frequency is configurable on the NiFi side and at the moment is set to 1 row per 10 seconds for each dataset. Format of each incoming transaction is JSON, containing attributes as described for each dataset in chapter 2. Example screenshots of the data stream and NiFi are provided in the SKaMP\_Tests.pdf file.
 
 \section{Data storage strategy}
 
@@ -381,7 +388,6 @@ This section explores potential machine learning tasks that could be applied to 
 \subsection{Fraud Detection}
 Fraud detection is a key use case for the provided datasets, where the goal is to classify transactions as fraudulent or legitimate. This can be achieved using various supervised learning techniques. Given that fraudulent transactions are typically rare, special care must be taken to handle the class imbalance. Planned steps include:
 \begin{itemize}
-    \item \textbf{Data Preprocessing:} Cleaning and normalizing features such as transaction amount, balances, and transaction type. Engineering additional features like transaction frequency or velocity features (e.g., total transaction amount over a sliding time window).
     \item \textbf{Model Selection:} Applying binary classification models such as Logistic Regression, Random Forest, Gradient Boosted Trees (e.g., XGBoost, LightGBM), and Neural Networks. These models will be trained to predict the `isFraud` label in the datasets.
     \item \textbf{Evaluation Metrics:} Since fraud detection deals with imbalanced data, standard metrics such as accuracy are insufficient. Precision, recall, F1-score, and the area under the Precision-Recall curve (AUC-PR) will be used to evaluate model performance.
     \item \textbf{Imbalanced Data Handling:} Techniques such as SMOTE (Synthetic Minority Oversampling Technique), undersampling, or cost-sensitive learning will be explored to address class imbalance.
