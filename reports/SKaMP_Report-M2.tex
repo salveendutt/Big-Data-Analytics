@@ -14,6 +14,7 @@
 \usepackage{setspace}
 \usepackage{graphicx}
 \usepackage{float}
+\usepackage{listings}
 
 \setstretch{1.15} % Adjust the stretch factor as needed
 
@@ -293,7 +294,43 @@ describe streaming api
 
 \section{Data storage strategy}
 
-TBD - (technology, format)
+Our input data consists purely of a structured data and there is no need to store special data types, such as images, text files, audio and etc. Therefore, we diceded to utilize SQL-like data warehouse system that enables analytics at a massive scale - Apache Hive.
+
+As described in chapter 2, our datasets contain completely different sets of features which makes it impossible to combine them in a single table. All incoming transactions will be divided into 4 groups for each dataset. Code block below represents an example of table creation for dataset 1 of the project.
+
+
+\begin{lstlisting}[language=SQL, caption=Apache HIVE table creation]
+    CREATE TABLE IF NOT EXISTS transactions_df_1 (
+        step INT,
+        type STRING,
+        amount FLOAT,
+        nameOrig STRING,
+        oldbalanceOrg FLOAT,
+        newbalanceOrig FLOAT,
+        nameDest STRING,
+        oldbalanceDest FLOAT,
+        newbalanceDest FLOAT,
+        isFraud INT,
+        isFlaggedFraud INT
+    )
+    STORED AS TEXTFILE;
+\end{lstlisting}
+
+Preliminary list of all tables in the storage is the following:
+
+\begin{enumerate}
+    \item transactions\_d1 - raw data for the dataset 1;
+    \item transactions\_processed\_d1 - processed data for the dataset 1;
+    \item transactions\_d2 - raw data for the dataset 2;
+    \item transactions\_processed\_d2 - processed data for the dataset 2;
+    \item transactions\_d3 - raw data for the dataset 3;
+    \item transactions\_processed\_d3 - processed data for the dataset 3;
+    \item transactions\_d4 - raw data for the dataset 4;
+    \item transactions\_processed\_d4 - processed data for the dataset 4.
+\end{enumerate}
+
+Additionally, we will be using MongoDB for storing prepared views for fast querying during the data presentation. Typically, it will replicate the processed data from both batch and streaming layers. This includes predicted labels for new transactions as well as indication whether data was used for training.
+
 
 \section{Project architecture}
 
@@ -377,8 +414,8 @@ Batch processing will focus on historical data analysis, feature engineering, an
 \begin{enumerate}
     \item Data Ingestion:
         \begin{itemize}
-            \item Periodic ingestion of historical transactions from data storage sources (e.g., Apache Hive or a distributed file system).
-            \item Data preprocessing to filter incomplete or invalid entries.
+            \item Periodic ingestion of historical transactions from data storage sources (Apache Hive).
+            \item Data preprocessing to validate and filter incomplete or invalid entries.
             \item Aggregation of transactional data for customer-level or terminal-level insights.
         \end{itemize}
     \item Data Transformation:
@@ -498,6 +535,46 @@ Patryk Prusak & Data visualisation and configuration on the UI (Serving Layer). 
 \end{tabular}
 \caption{Tasks assignment}
 \end{table}
+
+\newpage
+
+\begin{thebibliography}{9}
+
+    \bibitem{dataset1}
+    Chitwan Manchanda,
+    \textit{Fraudulent Transactions Data},
+    Kaggle, 2022.
+    Available at: \url{https://www.kaggle.com/datasets/chitwanmanchanda/fraudulent-transactions-data}.
+    
+    \bibitem{dataset2}
+    \textit{Credit\_Card\_Fraud\_},
+    OpenML, 2024.
+    Available at: \url{https://www.openml.org/search?type=data&status=active&id=45955&sort=runs}.
+
+    \bibitem{dataset3}
+    Carlos José,
+    \textit{Credit Card Transactions Synthetic Data Generation},
+    Kaggle, 2024.
+    Available at: \url{https://www.kaggle.com/datasets/cgrodrigues/credit-card-transactions-synthetic-data-generation?select=transactions_df.csv}.
+    
+    \bibitem{dataset4}
+    Machine Learning Group - ULB and Andrea,
+    \textit{Credit Card Fraud Detection},
+    Kaggle, 2018.
+    Available at: \url{https://www.kaggle.com/datasets/mlg-ulb/creditcardfraud}.
+    
+
+    \bibitem{dataset4}
+    \textit{Lambda Architecture},
+    Cazton.
+    Available at: \url{https://cazton.com/consulting/enterprise/lambda-architecture}.
+
+    \bibitem{chatgpt}
+    OpenAI,
+    \textit{ChatGPT: Language Model},
+    Available at: \url{https://chatgpt.com}.
+    
+    \end{thebibliography}
 
 
 \end{document}
