@@ -4,7 +4,12 @@
 datasets
 .vscode
 
+
+
 /services/nifi/conf/archive/
+
+
+/services/nifi-2-0/conf/archive/
 
 passes.txt
 

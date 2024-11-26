@@ -33,9 +33,6 @@
 
         - Users File - The file where the FileUserGroupProvider will store users and groups.
 
-        - Legacy Authorized Users File - The full path to an existing authorized-users.xml that will be automatically
-            be used to load the users and groups into the Users File.
-
         - Initial User Identity [unique key] - The identity of a users and systems to seed the Users File. The name of
             each property must be unique, for example: "Initial User Identity A", "Initial User Identity B",
             "Initial User Identity C" or "Initial User Identity 1", "Initial User Identity 2", "Initial User Identity 3"
@@ -47,8 +44,6 @@
         <identifier>file-user-group-provider</identifier>
         <class>org.apache.nifi.authorization.FileUserGroupProvider</class>
         <property name="Users File">./conf/users.xml</property>
-        <property name="Legacy Authorized Users File"></property>
-
         <property name="Initial User Identity 1"></property>
     </userGroupProvider>
 
@@ -76,7 +71,7 @@
         'TLS - Client Auth' - Client authentication policy when connecting to LDAP using LDAPS or START_TLS.
             Possible values are REQUIRED, WANT, NONE.
         'TLS - Protocol' - Protocol to use when connecting to LDAP using LDAPS or START_TLS. (i.e. TLS,
-            TLSv1.1, TLSv1.2, etc).
+            TLSv1.1, TLSv1.2, etc.).
         'TLS - Shutdown Gracefully' - Specifies whether the TLS should be shut down gracefully
             before the target context is closed. Defaults to false.
 
@@ -171,31 +166,6 @@
     To enable the ldap-user-group-provider remove 2 lines. This is 2 of 2. -->
 
     <!--
-        The ShellUserGroupProvider provides support for retrieving users and groups by way of shell commands
-        on systems that support `sh`.  Implementations available for Linux and Mac OS, and are selected by the
-        provider based on the system property `os.name`.
-
-        'Refresh Delay' - duration to wait between subsequent refreshes.  Default is '5 mins'.
-        'Exclude Groups' - regular expression used to exclude groups.  Default is '', which means no groups are excluded.
-        'Exclude Users' - regular expression used to exclude users.  Default is '', which means no users are excluded.
-        'Legacy Identifier Mode' - preserves the legacy behavior for id generation. Disabling this will ensure that
-                                    user and group ids are differentiated to handle the case where a user and group have
-                                    the same identity. Default is 'true', which means users and groups are not differentiated.
-        'Command Timeout' - amount of time to wait while executing a command before timing out
-    -->
-    <!-- To enable the shell-user-group-provider remove 2 lines. This is 1 of 2.
-    <userGroupProvider>
-        <identifier>shell-user-group-provider</identifier>
-        <class>org.apache.nifi.authorization.ShellUserGroupProvider</class>
-        <property name="Refresh Delay">5 mins</property>
-        <property name="Exclude Groups"></property>
-        <property name="Exclude Users"></property>
-        <property name="Legacy Identifier Mode">true</property>
-        <property name="Command Timeout">60 seconds</property>
-    </userGroupProvider>
-    To enable the shell-user-group-provider remove 2 lines. This is 2 of 2. -->
-
-    <!--
         The AzureGraphUserGroupProvider fetches users and groups from Azure Active Directory (AAD) using the Microsoft Graph API.
 
         'Refresh Delay'                 - (Optional) Duration of delay between each user and group refresh. Default is `5 mins`.
@@ -285,7 +255,7 @@
         The FileAccessPolicyProvider will provide support for managing access policies which is backed by a file
         on the local file system.
 
-        - User Group Provider - The identifier for an User Group Provider defined above that will be used to access
+        - User Group Provider - The identifier for a User Group Provider defined above that will be used to access
             users and groups for use in the managed access policies.
 
         - Authorizations File - The file where the FileAccessPolicyProvider will store policies.
@@ -293,16 +263,10 @@
         - Initial Admin Identity - The identity of an initial admin user that will be granted access to the UI and
             given the ability to create additional users, groups, and policies. The value of this property could be
             a DN when using certificates or LDAP, or a Kerberos principal. This property will only be used when there
-            are no other policies defined. If this property is specified then a Legacy Authorized Users File can not be specified.
+            are no other policies defined.
 
             NOTE: Any identity mapping rules specified in nifi.properties will also be applied to the initial admin identity,
             so the value should be the unmapped identity. This identity must be found in the configured User Group Provider.
-
-        - Legacy Authorized Users File - The full path to an existing authorized-users.xml that will be automatically
-            converted to the new authorizations model. If this property is specified then an Initial Admin Identity can
-            not be specified, and this property will only be used when there are no other users, groups, and policies defined.
-
-            NOTE: Any users in the legacy users file must be found in the configured User Group Provider.
 
         - Node Identity [unique key] - The identity of a NiFi cluster node. When clustered, a property for each node
             should be defined, so that every node knows about every other node. If not clustered these properties can be ignored.
@@ -324,7 +288,6 @@
         <property name="User Group Provider">file-user-group-provider</property>
         <property name="Authorizations File">./conf/authorizations.xml</property>
         <property name="Initial Admin Identity"></property>
-        <property name="Legacy Authorized Users File"></property>
         <property name="Node Identity 1"></property>
         <property name="Node Group"></property>
     </accessPolicyProvider>
@@ -342,49 +305,6 @@
         <class>org.apache.nifi.authorization.StandardManagedAuthorizer</class>
         <property name="Access Policy Provider">file-access-policy-provider</property>
     </authorizer>
-
-    <!--
-        NOTE: This Authorizer has been replaced with the more granular approach configured above with the Standard
-        Managed Authorizer. However, it is still available for backwards compatibility reasons.
-
-        The FileAuthorizer is NiFi's provided authorizer and has the following properties:
-
-        - Authorizations File - The file where the FileAuthorizer will store policies.
-
-        - Users File - The file where the FileAuthorizer will store users and groups.
-
-        - Initial Admin Identity - The identity of an initial admin user that will be granted access to the UI and
-            given the ability to create additional users, groups, and policies. The value of this property could be
-            a DN when using certificates or LDAP, or a Kerberos principal. This property will only be used when there
-            are no other users, groups, and policies defined. If this property is specified then a Legacy Authorized
-            Users File can not be specified.
-
-            NOTE: Any identity mapping rules specified in nifi.properties will also be applied to the initial admin identity,
-            so the value should be the unmapped identity.
-
-        - Legacy Authorized Users File - The full path to an existing authorized-users.xml that will be automatically
-            converted to the new authorizations model. If this property is specified then an Initial Admin Identity can
-            not be specified, and this property will only be used when there are no other users, groups, and policies defined.
-
-        - Node Identity [unique key] - The identity of a NiFi cluster node. When clustered, a property for each node
-            should be defined, so that every node knows about every other node. If not clustered these properties can be ignored.
-            The name of each property must be unique, for example for a three node cluster:
-            "Node Identity A", "Node Identity B", "Node Identity C" or "Node Identity 1", "Node Identity 2", "Node Identity 3"
-
-            NOTE: Any identity mapping rules specified in nifi.properties will also be applied to the node identities,
-            so the values should be the unmapped identities (i.e. full DN from a certificate).
-    -->
-    <!-- <authorizer>
-        <identifier>file-provider</identifier>
-        <class>org.apache.nifi.authorization.FileAuthorizer</class>
-        <property name="Authorizations File">./conf/authorizations.xml</property>
-        <property name="Users File">./conf/users.xml</property>
-        <property name="Initial Admin Identity"></property>
-        <property name="Legacy Authorized Users File"></property>
-
-        <property name="Node Identity 1"></property>
-    </authorizer>
-    -->
 
     <!--
         Single User Authorizer requires the configuration of the SingleUserLoginIdentityProvider
