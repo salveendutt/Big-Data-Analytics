@@ -25,6 +25,9 @@ def data(slug):
     random_row = random.choice(reader)
     header = readers[slug][0]
     data = dict(zip(header, random_row))
+    if not app.config.get("TESTING", False):
+        if random.random() < 0.1:
+            return "Random error occurred", 500
     return data
 
 
