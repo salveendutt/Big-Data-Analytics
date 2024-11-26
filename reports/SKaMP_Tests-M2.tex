@@ -44,7 +44,7 @@ GitHub repository: \href{https://github.com/salveendutt/Big-Data-Analytics}{http
 \hline
 Verify data incoming from stream API & 1. Start the server using start\_containers.bat; 2. Navigate to http://localhost:5000 & Incoming data is available on /data/0 & Passed. The screenshot is provided in Fig.1 and Fig.2 \\
 \hline
-Verify correct setup of the stream & Run 'pytest' from the root folder & Data stream is configured as expected; Incoming data is not null; Returned status code - 200 & Passed. The screenshot is provided in Fig. 8 \\
+Verify correct setup of the stream and data preprocessing functions & Run 'pytest' from the root folder & Data stream is configured as expected; Incoming data is not null; Returned status code - 200. Preprocessing utils return transformed data as expected & Passed. The screenshot is provided in Fig. 8 \\
 \hline
 Verify correct setup of NiFi, Kafka and Cassandra & Run the containers - follow steps in README.md & Data flows from streamin API to Kafka topics and Cassandra tables & Passed. The screenshot is provided in Fig. 2, 3, 4, 5, 6, 7 \\
 \hline
