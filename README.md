@@ -6,6 +6,7 @@
 2. Download datasets pointed below
 3. Start docker desktop
 4. Modify config files if needed
+5. Because of different line endings on Windows vs Unix, one needs to change line endings in ./services/nifi/conf/bootstrap.conf to LF or else it will fail to launch with 'The specified run.as user does not exist. Exiting.'
 5. Run start_containers.bat
 
 ## Data
