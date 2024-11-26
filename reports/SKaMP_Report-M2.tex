@@ -64,34 +64,34 @@
 \section*{Introduction}
 \addcontentsline{toc}{section}{Introduction}
 
-The goal of this project is to plan and implement financial transactions processing system which identifies suspicious and fraudulent activity in real-time. Given the large volume of incoming data, the project will utilize big data technologies as well as advanced machine learning algorithms for anomaly detection.
+This project aims to plan and implement a financial transaction processing system that identifies suspicious and fraudulent activity in real-time. Given the enormous volume of incoming data, the project will utilize big data technologies and advanced machine learning algorithms for anomaly detection.
 
 GitHub repository: \href{https://github.com/salveendutt/Big-Data-Analytics}{https://github.com/salveendutt/Big-Data-Analytics}.
 
 \subsection*{Updates from Milestone 1}
 \addcontentsline{toc}{subsection}{Updates from Milestone 1}
-The project architecture layout was updated to better follow the Lambda architecture. In particular: 
+The project architecture layout was updated to follow the Lambda architecture better. In particular: 
 \begin{itemize}
     \item master data storage was moved to the Batch layer;
     \item included NoSQL database as a storage for data querying in the Serving layer;
     \item Hive has been changed to Cassandra as the main storage solution;
-    \item the architecture schema was updated to better represent the data flow. 
+    \item The architecture schema was updated to represent the data flow better. 
 \end{itemize}
 
 
 \section{High level description}
 
-The main idea is to implement an automatic transactions processing so that anytime a fraudulent activity occurs, the transaction is blocked for further manual review. The aim is to reduce financial losses of the end-users and to enhance the security of online payment, ensuring a safer experience for all customers.
+The main idea is to implement automatic transaction processing so that the transaction is blocked for further manual review when a fraudulent activity occurs. The aim is to reduce the end-users financial losses and enhance the security of online payment, ensuring a safer experience for all customers.
 
-There are two main end-users of the project: financial institutions (we will call them 'Managers') and their customers executing the payments. Although both categories can benefit from the solution, in our implementation we will mainly focus on Managers to limit additional data in storage.
+The project's main end-users are financial institutions (we will call them 'Managers') and their customers who are executing the payments. Although both categories can benefit from the solution, in our implementation, we will mainly focus on Managers to limit additional data in storage.
 
-The list below contains main features that we expect to implement for Managers:
+The list below contains the main features that we expect to implement for Managers:
 \begin{enumerate}
     \item Fraudulent transactions are automatically highlighted so that it is easier to identify suspicious activity;
     \item The history of transactions is stored and available for later review;
-    \item A dashboard with statistics of fraudulent activity is available and customizable for better localisation of issues (e.g. too large amount, unusual location);
+    \item A dashboard with statistics of fraudulent activity is available and customizable for better localization of issues (e.g., too large amount, unusual location);
     \item Anomaly-detection model is continuously updated so that fraud detection utilizes new historical data and is more accurate on future transactions;
-    \item Data streaming processing and batch jobs are customizable so that the testing of model's performance is simplified.
+    \item Data streaming processing and batch jobs are customizable so that the testing of the model's performance is simplified.
 \end{enumerate}
 
 
@@ -99,7 +99,7 @@ The list below contains main features that we expect to implement for Managers:
 
 \section{Data sources}
 
-Due to strict security regulations on personal and financial data, it is quite challenging to find open source real transactions data both for model training and streaming. Therefore, available synthetic and anonymized datasets will be used. The table below contains description of the data sources. Each data source is described in more detail in the dedicated subsections.
+Due to strict security regulations on personal and financial data, it is challenging to find open-source actual transaction data for model training and streaming. Therefore, available synthetic and anonymized datasets will be used. The table below contains a description of the data sources. Each data source is described in more detail in the dedicated subsections.
 
 \begin{table}[h!]
 \centering
@@ -122,14 +122,14 @@ Due to strict security regulations on personal and financial data, it is quite c
 \caption{Data sources}
 \end{table}
 
-Data-streaming API was implemented from scratch. The assumption was that it would use the above datasets; with a specified time-frame, it would choose a random transaction which was not used for training and push it for further processing. For the testing purposes, the probability of a fraudulent transaction will be set manually to some high enough constant value. Details description of the implented streaming API can be found in chapter 3.
+Data-streaming API was implemented from scratch. The assumption was that it would use the above datasets; with a specified time frame, it would choose a random transaction not used for training and push it for further processing. The probability of a fraudulent transaction will be set manually to some high enough constant value for testing purposes. A detailed description of the implemented streaming API can be found in Chapter 3.
 
-The content of the datasets is extremely different which makes it impossible to combine them into a single dataset. Therefore, each dataset will be treated separately for both streaming and ML training.
+The content of the datasets is exceptionally different, which makes it impossible to combine them into a single dataset. Therefore, each dataset will be treated separately for streaming and ML training.
 
 
 \subsection{Fraudulent Transactions Data (Kaggle)}
 
-Dataset contains transactions for a financial company, indicating whether it is fraudulent or not. Data for the case is available in CSV format having 6362620 rows and 10 columns. Full column description is presented in the table 2.
+The dataset contains transactions for a financial company, indicating whether they are fraudulent. Data for the case is available in CSV format, which has 6362620 rows and ten columns. The entire column description is presented in Table 2.
 
 \begin{table}[ht!]
 \centering
@@ -137,9 +137,9 @@ Dataset contains transactions for a financial company, indicating whether it is 
 \hline
 \textbf{Column} & \textbf{Content} & \textbf{Type} \\
 \hline
-step & maps a unit of time in the real world. In this case 1 step is 1 hour of time. Total steps 744 (30 days simulation) & int \\
+step & maps a unit of time in the real world. In this case, 1 step is 1 hour. Total steps 744 (30 days simulation) & int \\
 \hline
-type & type of the transaction. Available values: CASH-IN, CASH-OUT, DEBIT, PAYMENT and TRANSFER & str \\
+type & type of the transaction. Available values: CASH-IN, CASH-OUT, DEBIT, PAYMENT, and TRANSFER & str \\
 \hline
 amount & amount of the transaction in local currency & float \\
 \hline
@@ -151,11 +151,11 @@ newbalanceOrig & new balance after the transaction & float \\
 \hline
 nameDest & customer who is the recipient of the transaction & str \\
 \hline
-oldbalanceDest & initial balance recipient before the transaction. Note that there is not information for customers that start with M (Merchants) & float \\
+oldbalanceDest & initial balance recipient before the transaction. Note that there is no information for customers that start with M (Merchants) & float \\
 \hline
-newbalanceDest & new balance recipient after the transaction. Note that there is not information for customers that start with M (Merchants) & float \\
+newbalanceDest & new balance recipient after the transaction. Note that there is no information for customers that start with M (Merchants) & float \\
 \hline
-isFraud & this is the transactions made by the fraudulent agents inside the simulation. In this specific dataset the fraudulent behavior of the agents aims to profit by taking control or customers accounts and try to empty the funds by transferring to another account and then cashing out of the system & int \\
+isFraud & these are the transactions made by the fraudulent agents inside the simulation. In this specific dataset, the fraudulent behavior of the agents aims to profit by taking control of customers' accounts and trying to empty the funds by transferring them to another account and then cashing out of the system & int \\
 \hline
 isFlaggedFraud & the business model aims to control massive transfers from one account to another and flags illegal attempts. An illegal attempt in this dataset is an attempt to transfer more than 200.000 in a single transaction & int \\
 \hline
@@ -163,18 +163,18 @@ isFlaggedFraud & the business model aims to control massive transfers from one a
 \caption{Columns description. Dataset 1: 'Fraudulent Transactions Data' from Kaggle}
 \end{table}
 
-The following transformation should be done to pass dataset to the ML models:
+The following transformation should be done to pass the dataset to the ML models:
 \begin{enumerate}
-    \item 'type' column values CASH-IN, CASH-OUT, DEBIT, PAYMENT and TRANSFER transformed to 1, 2, 3, 4 and 5 respectively;
+    \item 'type' column values CASH-IN, CASH-OUT, DEBIT, PAYMENT, and TRANSFER transformed to 1, 2, 3, 4, and 5, respectively;
     \item a new attribute 'isMerchant' is calculated. 1 if 'nameDest' starts with 'M', 0 - otherwise.
 \end{enumerate}
 
-Generally, the dataset and clean and structured, no other preprocessing, except for the described above is necessary. Potential issue is that it is highly unbalanced (less than 1\% of fraud transactions), and contains quite small amount of features (6) for model training. 
+Generally, the dataset and clean and structured, no other preprocessing, except for the described above is necessary. The potential issue is that it is highly unbalanced (less than 1\% of fraud transactions) and contains quite a small number of features (6) for model training. 
 
 
 \subsection{Credit Card Fraud (OpenML)}
 
-This dataset captures transaction patterns and behaviors that could indicate potential fraud in card transactions. The data is composed of several features designed to reflect the transactional context such as geographical location, transaction medium, and spending behavior relative to the user's history.
+This dataset captures transaction patterns and behaviors that could indicate potential fraud in card transactions. The data comprises several features that reflect the transactional context, such as geographical location, transaction medium, and spending behavior relative to the user's history.
 
 \begin{table}[ht!]
     \centering
@@ -202,13 +202,13 @@ This dataset captures transaction patterns and behaviors that could indicate pot
     \caption{Columns description. Dataset 2: 'Credit\_Card\_Fraud\_' from OpenML}
 \end{table}
 
-The whole dataset is in the numeric form, therefore, no additional preprocessing is necessary. The only transformation is to rename the target variable to 'isFraud' To match other datasets format.
-The target feature balance is much better than for the previous dataset: 8.7\% of fraud. Additional complication is that feature 'amount' is not available. A ratio to the median purchase of the same customer is provided instead.
+The whole dataset is in the numeric form. Therefore, no additional preprocessing is necessary. The only transformation is to rename the target variable to 'isFraud' to match the format of other datasets.
+The target feature balance is much better than the previous dataset: 8.7\% of fraud. An additional complication is that the feature 'amount' is not available. A ratio to the median purchase of the same customer is provided instead.
 
 
 \subsection{Credit Card Transactions Synthetic Data Generation (Kaggle)}
 
-This dataset is a collection of synthetic credit card transaction data. The data is designed to mimic the characteristics of real credit card transactions while ensuring privacy and compliance with data protection regulations such as the General Data Protection Regulation (GDPR). It contains 1,785,308 transactions for 5000 customers.
+This dataset is a collection of synthetic credit card transaction data. The data is designed to mimic the characteristics of actual credit card transactions while ensuring privacy and compliance with data protection regulations such as the General Data Protection Regulation (GDPR). It contains 1,785,308 transactions for 5000 customers.
 
 \begin{table}[ht!]
     \centering
@@ -228,15 +228,15 @@ This dataset is a collection of synthetic credit card transaction data. The data
     \hline
     amt & Transaction amount & float \\
     \hline
-    entry\_mode & Mode of the transaction. Possible values are Contactless, Chip and Swipe. & str \\
+    entry\_mode & Mode of the transaction. Possible values are Contactless, Chip, and Swipe. & str \\
     \hline 
-    fraud & Target variable containing 1 for fraudulent transaction and 0 otherwise & int \\
+    fraud & Target variable containing 1 for the fraudulent transaction and 0 otherwise & int \\
     \hline
-    fraud\_scenario & Additional label for the transaction. 97\% of the dataset has value 0. No specific description for each scenario is provided.  & int, [0, 1, 2] \\
+    fraud\_scenario & Additional label for the transaction. 97\% of the dataset has a value of 0. No specific description for each scenario is provided.  & int, [0, 1, 2] \\
     \hline
-    mean\_amount & Average transaction amout for a specific customer  & float \\
+    mean\_amount & Average transaction amount for a specific customer  & float \\
     \hline
-    std\_amount & Standard deviation of the transaction amout for a specific customer  & float \\
+    std\_amount & Standard deviation of the transaction amount for a specific customer  & float \\
     \hline
     mean\_nb\_tx\_per\_day & Mean number of transactions per day for a specific customer & float \\
     \hline
@@ -246,18 +246,18 @@ This dataset is a collection of synthetic credit card transaction data. The data
     \caption{Columns description. Dataset 3: 'Credit Card Transactions Synthetic Data Generation' from Kaggle}
 \end{table}
 
-Like other datasets, it is quite unbalanced with 3\% of fraudulent transactions. The following preprocessing should be done, before passing rows to ML task:
+Like other datasets, it is quite unbalanced, with 3\% of fraudulent transactions. The following preprocessing should be done before passing rows to the ML task:
 \begin{enumerate}
-    \item 'entry\_mode' column values Contactless, Chip and Swipe transformed to 1, 2, and 3 respectively;
+    \item 'entry\_mode' column values Contactless, Chip, and Swipe transformed to 1, 2, and 3, respectively;
     \item 'amt' renamed to 'amount',
     \item 'fraud' renamed to 'isFraud',
-    \item transaction data itself contains only customer id. Therefore, an additional step is to find the customer and add related features to the output.
+    \item transaction data itself contains only customer ID. Therefore, an additional step is to find the customer and add related features to the output.
 \end{enumerate}
 
 
 \subsection{Credit Card Fraud Detection (Kaggle)}
 
-The dataset contains transactions made by credit cards in September 2013 by European cardholders. It contains 284,807 transactions with only 492 (less than 1\%) of fraud ones. Due to confidentiality issues, the dataset contains only numerical input variables which are the result of a PCA transformation.
+The dataset contains transactions made by credit cards in September 2013 by European cardholders. It includes 284,807 transactions, with only 492 (less than 1\%) of fraud ones. Due to confidentiality issues, the dataset contains only numerical input variables resulting from a PCA transformation.
 
 \begin{table}[ht!]
     \centering
@@ -277,7 +277,7 @@ The dataset contains transactions made by credit cards in September 2013 by Euro
     \caption{Columns description. Dataset 4: 'Credit Card Fraud Detection' from Kaggle}
 \end{table}
 
-This dataset contains relatively small amount of data compared to others (about 280k of transactions). Therefore, we are planning to keep it as an additional dataset in case of any issues with others.
+This dataset contains a relatively small amount of data compared to others (about 280k transactions). Therefore, we plan to keep it as an additional dataset in case of any issues with others.
 
 Since the data has already been processed, the only necessary transormation is to rename columns 'Amount' and 'Class' to 'amount', 'isFraud' respectively.
 
@@ -285,7 +285,7 @@ Since the data has already been processed, the only necessary transormation is t
 
 \section{Data acquisition strategy}
 
-Due to the lack of publicly available open streaming APIs, we designed and implemented a custom streaming API for real-time fraud detection. Stream API is connected to the NiFi for futher data collection and preprocessing. The following technological stack is used for the data acquisition:
+Due to the lack of publicly available open streaming APIs, we designed and implemented a custom streaming API for real-time fraud detection. Stream API is connected to the NiFi for further data collection and preprocessing. The following technological stack is used for the data acquisition:
 
 \begin{enumerate}
     \item Python,
@@ -298,14 +298,14 @@ Due to the lack of publicly available open streaming APIs, we designed and imple
     \item Zookeeper.
 \end{enumerate}
 
-When server is started, stream api is avalable on localhost:5000/data/:dataset\_id. Data frequency is configurable on the NiFi side and at the moment is set to 1 row per 2 seconds for each dataset. Format of each incoming transaction is JSON, containing attributes as described for each dataset in chapter 2. To simulate real-world conditions, the streaming API randomly (10\%) returns a 500 error. Example screenshots of the data stream and NiFi are provided in the SKaMP\_Tests.pdf file.
+When the server is started, stream API is available on localhost:5000/data/:dataset\_id. Data frequency is configurable on the NiFi side and, at the moment, is set to 1 row per 2 seconds for each dataset. The format of each incoming transaction is JSON, containing attributes as described for each dataset in Chapter 2. The streaming API randomly (10\%) returns a 500 error to simulate real-world conditions. Example screenshots of the data stream and NiFi are provided in the SKaMP\_Tests.pdf file.
 
-Below we present the NiFi flows for the data acquisition, processors failures are retried 10 times, errors are logged with LogMessage processor with level 'error'. The first flow is the overview of the whole process, the three processor groups are responsible for fetching and processing the data. Inside each of the processor groups there are:
+Below, we present the NiFi flows for the data acquisition. Processor failures are retried 10 times, and errors are logged with the LogMessage processor with a level of 'error.' The first flow is the overview of the whole process. The three processor groups are responsible for fetching and processing the data. Inside each of the processor groups, there are:
 \begin{itemize}
     \item InvokeHTTP - to fetch the data from the stream API,
     \item EvaluateJsonPath - to extract the data from the JSON format,
-    \item ReplaceText - to construct an CQL query for the Cassandra,
-    \item PublishKafkaRecord - to send the data to the Kafka,
+    \item ReplaceText - to construct a CQL query for the Cassandra,
+    \item PublishKafkaRecord - to send the data to Kafka,
     \item LogMessage - to log the errors.
 \end{itemize}
 
@@ -324,9 +324,9 @@ Below we present the NiFi flows for the data acquisition, processors failures ar
 \end{figure}
 \section{Data storage strategy}
 
-Our input data consists purely of a structured data and there is no need to store special data types, such as images, text files, audio and etc. Therefore, we decided to utilize SQL-like (CQL) data warehouse system that enables analytics at a massive scale - Apache Cassandra.
+Our input data consists of structured data; there is no need to store particular data types, such as images, text files, audio, etc. Therefore, we decided to utilize an SQL-like (CQL) data warehouse system that enables analytics at a massive scale - Apache Cassandra.
 
-As described in chapter 2, our datasets contain completely different sets of features which makes it impossible to combine them in a single table. All incoming transactions will be divided into 4 groups for each dataset. Code block below represents an example of table creation for dataset 1 of the project.
+As described in Chapter 2, our datasets contain entirely different sets of features, which makes it impossible to combine them in a single table. All incoming transactions will be divided into four groups for each dataset. The code block below represents an example of table creation for dataset 1 of the project.
 
 
 \begin{lstlisting}[language=SQL, caption=Apache Cassandra table creation]
@@ -346,7 +346,7 @@ As described in chapter 2, our datasets contain completely different sets of fea
     );
 \end{lstlisting}
 
-Preliminary list of all tables in the storage is the following:
+The preliminary list of all tables in the storage is the following:
 
 \begin{enumerate}
     \item dataset1 - raw data for the dataset 1;
@@ -359,7 +359,7 @@ Preliminary list of all tables in the storage is the following:
     \item dataset4\_processed - processed data for the dataset 4.
 \end{enumerate}
 
-Additionally, we will be using MongoDB for storing prepared views for fast querying during the data presentation. Typically, it will replicate the processed data from both batch and streaming layers. This includes predicted labels for new transactions as well as indication whether data was used for training.
+Additionally, we will use MongoDB to store prepared views for fast querying during the data presentation. Typically, it replicates the processed data from batch and streaming layers. This includes predicted labels for new transactions and an indication of whether data was used for training.
 
 
 \section{Project architecture}
@@ -375,7 +375,7 @@ We are planning to implement the project based on Lambda Architecture. The main 
     \item Batch Layer
         \begin{itemize}
             \item Data processing and filtering for the model training
-            \item ML model training with a fixed schedule (e.g. every 10 minutes)
+            \item ML model training with a fixed schedule (e.g., every 10 minutes)
         \end{itemize}
     \item Serving Layer
         \begin{itemize}
@@ -400,16 +400,16 @@ The following Big Data platforms will be used:
     \item Apache Cassandra as a data storage;
     \item Apache Kafka: to work with the streaming data;
     \item Apache Spark: to make the batch processing and model training;
-    \item MongoDB: to store prepared batch view and real-time views for fast quering;
-    \item Apache Superset (to be agreed with the supervisor): for data analysis on the user-interface. If the service will not be approved, UI will be implemented from scratch using JS framework, e.g. React.
+    \item MongoDB: to store prepared batch views and real-time views for fast querying;
+    \item Apache Superset (to be agreed with the supervisor): for data analysis on the user interface. If the service is not approved, UI will be implemented from scratch using a JS framework, e.g., React.
 \end{itemize}
 
 \section{Planned ML Tasks}
 
-This section explores potential machine learning tasks that could be applied to the available datasets for fraud and anomaly detection. The primary focus will be on identifying fraudulent transactions, developing anomaly detection models, and leveraging data-driven insights for effective fraud management. 
+This section explores potential machine learning tasks that could be applied to the available fraud and anomaly detection datasets. The primary focus will be identifying fraudulent transactions, developing anomaly detection models, and leveraging data-driven insights for effective fraud management. 
 
 \subsection{Fraud Detection}
-Fraud detection is a key use case for the provided datasets, where the goal is to classify transactions as fraudulent or legitimate. This can be achieved using various supervised learning techniques. Given that fraudulent transactions are typically rare, special care must be taken to handle the class imbalance. Planned steps include:
+Fraud detection is a key use case for the provided datasets, where the goal is to classify transactions as fraudulent or legitimate. This can be achieved using various supervised learning techniques. Fraudulent transactions are typically rare, so special care must be taken to handle the class imbalance. Planned steps include:
 \begin{itemize}
     \item \textbf{Model Selection:} Applying binary classification models such as Logistic Regression, Random Forest, Gradient Boosted Trees (e.g., XGBoost, LightGBM), and Neural Networks. These models will be trained to predict the `isFraud` label in the datasets.
     \item \textbf{Evaluation Metrics:} Since fraud detection deals with imbalanced data, standard metrics such as accuracy are insufficient. Precision, recall, F1-score, and the area under the Precision-Recall curve (AUC-PR) will be used to evaluate model performance.
@@ -417,7 +417,7 @@ Fraud detection is a key use case for the provided datasets, where the goal is t
 \end{itemize}
 
 \subsection{Anomaly Detection}
-Anomaly detection is a complementary task to supervised fraud detection, focusing on identifying unusual transactions that deviate significantly from normal behavior. This approach is particularly useful for uncovering previously unseen fraud patterns. Proposed methods include:
+Anomaly detection is complementary to supervised fraud detection, focusing on identifying unusual transactions that deviate significantly from normal behavior. This approach is beneficial for uncovering previously unseen fraud patterns. Proposed methods include:
 \begin{itemize}
     \item \textbf{Unsupervised Learning:} Techniques like Isolation Forests, k-means clustering, and DBSCAN will be applied to identify anomalous transactions based on transaction features. 
     \item \textbf{Autoencoders:} Neural network-based autoencoders will be used to reconstruct transaction data, with high reconstruction errors indicating potential anomalies.
@@ -429,13 +429,13 @@ Anomaly detection is a complementary task to supervised fraud detection, focusin
 % The synthetic dataset containing customer and terminal profiles provides an opportunity to perform behavioral analysis and create risk profiles. Proposed tasks include:
 % \begin{itemize}
 %     \item \textbf{Customer Segmentation:} Clustering techniques (e.g., k-means, hierarchical clustering) will be applied to group customers based on transaction behaviors, identifying high-risk segments.
-%     \item \textbf{Terminal Risk Scoring:} Anomaly detection models will be used to identify terminals frequently involved in unusual or fraudulent transactions.
+%     \item \textbf{Terminal Risk Scoring:} Anomaly detection models will identify terminals frequently involved in unusual or fraudulent transactions.
 %     \item \textbf{Feature Engineering:} Time-based features (e.g., transaction frequency, average transaction amount over time) will be derived for deeper behavioral insights.
 % \end{itemize}
 
 \section{Planned batch and stream processing}
 
-This chapter describes the planned implementation of batch and stream processing flows in detail, as part of the Lambda Architecture outlined in the previous section.
+This chapter describes the planned implementation of batch and stream processing flows in detail as part of the Lambda Architecture outlined in the previous section.
 
 \subsection{Batch Processing Workflow}
 Batch processing will focus on historical data analysis, feature engineering, and machine learning model training. The workflow for batch processing is as follows:
@@ -455,7 +455,7 @@ Batch processing will focus on historical data analysis, feature engineering, an
     \item Model Training:
         \begin{itemize}
             \item Training ML models using the preprocessed data with a fixed schedule (e.g., every 30 minutes or daily, depending on model requirements).
-            \item Storing the trained models in a model repository for use in the serving layer and the streaming layer.
+            \item Storing the trained models in a model repository for use in the serving and streaming layers.
         \end{itemize}
 \end{enumerate}
 
@@ -486,7 +486,7 @@ The serving layer will provide a unified view of real-time and batch-processed d
 \begin{enumerate}
     \item Unified Data Storage:
         \begin{itemize}
-            \item MongoDB will serve as the primary storage for both batch and real-time data, enabling fast querying and retrieval.
+            \item MongoDB will be the primary storage for batch and real-time data, enabling fast querying and retrieval.
         \end{itemize}
     \item Client Interfaces:
         \begin{itemize}
@@ -510,40 +510,40 @@ The Lambda Architecture ensures seamless integration between the batch and strea
 
 \section{Planned way of presenting the results}
 
-In this architecture, we propose to use Apache Superset as the primary tool for presenting analytical results and monitoring system performance. Superset is an open-source data visualization and business intelligence platform that is well-suited for modern data pipelines due to its extensive support for a wide range of data sources and its ease of integration into existing architectures.
+In this architecture, we propose to use Apache Superset as the primary tool for presenting analytical results and monitoring system performance. Superset is an open-source data visualization and business intelligence platform well-suited for modern data pipelines due to its extensive support for a wide range of data sources and ease of integration into existing architectures.
 
 \subsection{Integration of Apache Superset with the Current Architecture}
 As illustrated in the architecture diagram:
 \begin{itemize}
     \item The \textbf{Batch Layer}, powered by Apache Cassandra, processes large-scale data and aggregates it into queryable formats.
-    \item The \textbf{Speed Layer}, which uses Kafka for real-time data ingestion and Spark for processing, produces real-time views that are stored in MongoDB. Superset can connect to MongoDB to display these real-time analytics, provided an appropriate SQL-like connector (e.g., MongoDB BI Connector) is configured.
+    \item The \textbf{Speed Layer}, which uses Kafka for real-time data ingestion and Spark for processing, produces real-time views stored in MongoDB. Superset can connect to MongoDB to display these real-time analytics, provided an appropriate SQL-like connector (e.g., MongoDB BI Connector) is configured.
     \item The \textbf{Serving Layer} facilitates the querying of both batch and real-time views, making this data accessible to Superset for visualization in unified dashboards.
 \end{itemize}
 
-By integrating Superset with both the batch and speed layers, the system can provide users with comprehensive dashboards that include both historical trends and real-time updates. This combination is particularly beneficial for monitoring critical use cases such as fraud detection, as it allows stakeholders to view both immediate alerts and long-term patterns.
+By integrating Superset with batch and speed layers, the system can provide users with comprehensive dashboards that include historical trends and real-time updates. This combination is particularly beneficial for monitoring critical use cases such as fraud detection, as it allows stakeholders to view both immediate alerts and long-term patterns.
 
 \subsection{Advantages of Using Apache Superset}
 \begin{itemize}
     \item \textbf{Ease of Use}: Superset provides an intuitive drag-and-drop interface for creating visualizations and dashboards, making it accessible to non-technical users.
-    \item \textbf{Real-Time and Batch Data Integration}: The ability to combine data from the speed and batch layers into unified dashboards enables comprehensive analytics and monitoring.
+    \item \textbf{Real-Time and Batch Data Integration}: Combining data from the speed and batch layers into unified dashboards enables comprehensive analytics and monitoring.
     \item \textbf{Custom Visualization}: Superset supports a variety of visualizations, allowing users to explore data in formats that best suit their needs, from basic bar charts to advanced geographic maps.
     \item \textbf{Scalability}: Being lightweight and web-based, Superset can handle a growing volume of data as the architecture scales.
-    \item \textbf{Open Source and Extensibility}: As an open-source platform, Superset can be customized and extended to fit specific requirements.
+    \item \textbf{Open Source and Extensibility}: Superset can be customized and extended to fit specific requirements as an open-source platform.
 \end{itemize}
 
 \subsection{Disadvantages and Challenges}
 While Superset provides significant benefits, there are a few challenges and limitations to consider:
 \begin{itemize}
-    \item \textbf{Indirect Support for Kafka}: Superset does not natively connect to Kafka. Real-time data from Kafka must first be stored in a queryable data store (e.g., MongoDB or a similar OLAP engine) before it can be visualized.
-    \item \textbf{MongoDB Support}: Superset does not have native support for MongoDB. A SQL-like connector (such as the MongoDB BI Connector) or transformation of data into another supported format is required, adding some complexity.
+    \item \textbf{Indirect Support for Kafka}: Superset does not natively connect to Kafka. Before it can be visualized, real-time data from Kafka must first be stored in a queryable data store (e.g., MongoDB or a similar OLAP engine).
+    \item \textbf{MongoDB Support}: Superset does not have native support for MongoDB. An SQL-like connector (such as the MongoDB BI Connector) or data transformation into another supported format is required, adding some complexity.
     \item \textbf{Performance Considerations}: For real-time monitoring, performance can be a bottleneck if the underlying data stores (e.g., MongoDB or Cassandra) are not optimized for frequent querying by Superset.
-    \item \textbf{Learning Curve for Advanced Features}: While the basic interface is user-friendly, advanced configurations (e.g., complex filters, custom SQL queries) may require technical expertise.
+    \item \textbf{Learning Curve for Advanced Features}: While the primary interface is user-friendly, advanced configurations (e.g., complex filters and custom SQL queries) may require technical expertise.
 \end{itemize}
 
 
 \section{Tasks assignment}
 
-The table below contains the list of team members and preliminary allocation of tasks to team members.
+The table below contains the list of team members and the preliminary allocation of tasks to team members.
 
 \begin{table}[htbp]
 \centering
@@ -555,9 +555,9 @@ Salveen Singh Dutt & Batch processing of the historical data for up-to-date mode
 \hline
 Karina Tiurina & Fraud detection model training and fine-tuning; Data stream processing (Speed Layer). & Salveen Singh Dutt \\
 \hline
-Patryk Prusak & Data ingestion, collection and pre-processing. & Karina Tiurina, Salveen Singh Dutt  \\
+Patryk Prusak & Data ingestion, collection, and preprocessing. & Karina Tiurina, Salveen Singh Dutt  \\
 \hline
-Patryk Prusak & Data visualisation and configuration on the UI (Serving Layer). & Karina Tiurina, Salveen Singh Dutt \\
+Patryk Prusak & Data visualization and configuration on the UI (Serving Layer). & Karina Tiurina, Salveen Singh Dutt \\
 \hline
 \end{tabular}
 \caption{Tasks assignment}
