@@ -290,48 +290,51 @@ Due to the lack of publicly available open streaming APIs, we designed and imple
 \begin{enumerate}
     \item Python,
     \item Flask  - for the stream API,
-    \item Apache NiFi,
+    \item Apache NiFi - for the data collection,
     \item Docker - for deployment,
-    \item Apache Hive (to be properly configured for M3)
+    \item Apache Kafka - for the data streaming,
+    \item Kafdrop - for Kafka monitoring,
+    \item Apache Cassandra - as a main storage solution
+    \item Zookeeper.
 \end{enumerate}
 
-When server is started, stream api is avalable on localhost:5000/data/:dataset\_id. Data frequency is configurable on the NiFi side and at the moment is set to 1 row per 10 seconds for each dataset. Format of each incoming transaction is JSON, containing attributes as described for each dataset in chapter 2. Example screenshots of the data stream and NiFi are provided in the SKaMP\_Tests.pdf file.
+When server is started, stream api is avalable on localhost:5000/data/:dataset\_id. Data frequency is configurable on the NiFi side and at the moment is set to 1 row per 2 seconds for each dataset. Format of each incoming transaction is JSON, containing attributes as described for each dataset in chapter 2. To simulate real-world conditions, the streaming API randomly (10\%) returns a 500 error. Example screenshots of the data stream and NiFi are provided in the SKaMP\_Tests.pdf file.
 
 \section{Data storage strategy}
 
-Our input data consists purely of a structured data and there is no need to store special data types, such as images, text files, audio and etc. Therefore, we diceded to utilize SQL-like data warehouse system that enables analytics at a massive scale - Apache Hive.
+Our input data consists purely of a structured data and there is no need to store special data types, such as images, text files, audio and etc. Therefore, we diceded to utilize SQL-like data warehouse system that enables analytics at a massive scale - Apache Cassandra.
 
 As described in chapter 2, our datasets contain completely different sets of features which makes it impossible to combine them in a single table. All incoming transactions will be divided into 4 groups for each dataset. Code block below represents an example of table creation for dataset 1 of the project.
 
 
-\begin{lstlisting}[language=SQL, caption=Apache HIVE table creation]
-    CREATE TABLE IF NOT EXISTS transactions_df_1 (
+\begin{lstlisting}[language=SQL, caption=Apache Cassandra table creation]
+    CREATE TABLE dataset1 (
         step INT,
-        type STRING,
-        amount FLOAT,
-        nameOrig STRING,
-        oldbalanceOrg FLOAT,
-        newbalanceOrig FLOAT,
-        nameDest STRING,
-        oldbalanceDest FLOAT,
-        newbalanceDest FLOAT,
+        type TEXT,
+        amount DECIMAL,
+        isFlaggedFraud INT,
         isFraud INT,
-        isFlaggedFraud INT
-    )
-    STORED AS TEXTFILE;
+        nameDest TEXT,
+        nameOrig TEXT,
+        newbalanceDest DECIMAL,
+        newbalanceOrig DECIMAL,
+        oldbalanceDest DECIMAL,
+        oldbalanceOrg DECIMAL,
+        PRIMARY KEY (step, nameOrig)
+    );
 \end{lstlisting}
 
 Preliminary list of all tables in the storage is the following:
 
 \begin{enumerate}
-    \item transactions\_d1 - raw data for the dataset 1;
-    \item transactions\_processed\_d1 - processed data for the dataset 1;
-    \item transactions\_d2 - raw data for the dataset 2;
-    \item transactions\_processed\_d2 - processed data for the dataset 2;
-    \item transactions\_d3 - raw data for the dataset 3;
-    \item transactions\_processed\_d3 - processed data for the dataset 3;
-    \item transactions\_d4 - raw data for the dataset 4;
-    \item transactions\_processed\_d4 - processed data for the dataset 4.
+    \item dataset1 - raw data for the dataset 1;
+    \item dataset1\_processed - processed data for the dataset 1;
+    \item dataset2 - raw data for the dataset 2;
+    \item dataset2\_processed - processed data for the dataset 2;
+    \item dataset3 - raw data for the dataset 3;
+    \item dataset3\_processed - processed data for the dataset 3;
+    \item dataset4 - raw data for the dataset 4;
+    \item dataset4\_processed - processed data for the dataset 4.
 \end{enumerate}
 
 Additionally, we will be using MongoDB for storing prepared views for fast querying during the data presentation. Typically, it will replicate the processed data from both batch and streaming layers. This includes predicted labels for new transactions as well as indication whether data was used for training.
@@ -372,7 +375,7 @@ Figure 1 shows an outline of the project architecture.
 The following Big Data platforms will be used:
 \begin{itemize}
     \item Apache NiFi: to collect and distribute the data from different sources;
-    \item Apache Hive as a data storage;
+    \item Apache Cassandra as a data storage;
     \item Apache Kafka: to work with the streaming data;
     \item Apache Spark: to make the batch processing and model training;
     \item MongoDB: to store prepared batch view and real-time views for fast quering;
@@ -418,7 +421,7 @@ Batch processing will focus on historical data analysis, feature engineering, an
 \begin{enumerate}
     \item Data Ingestion:
         \begin{itemize}
-            \item Periodic ingestion of historical transactions from data storage sources (Apache Hive).
+            \item Periodic ingestion of historical transactions from data storage sources (Apache Cassandra).
             \item Data preprocessing to validate and filter incomplete or invalid entries.
             \item Aggregation of transactional data for customer-level or terminal-level insights.
         \end{itemize}
@@ -490,7 +493,7 @@ In this architecture, we propose to use Apache Superset as the primary tool for 
 \subsection{Integration of Apache Superset with the Current Architecture}
 As illustrated in the architecture diagram:
 \begin{itemize}
-    \item The \textbf{Batch Layer}, powered by Apache Hive, processes large-scale data and aggregates it into queryable formats. Superset can directly connect to Hive via SQL interfaces, enabling the creation of dashboards for historical and batch-processed data.
+    \item The \textbf{Batch Layer}, powered by Apache Cassandra, processes large-scale data and aggregates it into queryable formats. Superset can connect to Cassandra via Presto interfaces, enabling the creation of dashboards for historical and batch-processed data.
     \item The \textbf{Speed Layer}, which uses Kafka for real-time data ingestion and Spark for processing, produces real-time views that are stored in MongoDB. Superset can connect to MongoDB to display these real-time analytics, provided an appropriate SQL-like connector (e.g., MongoDB BI Connector) is configured.
     \item The \textbf{Serving Layer} facilitates the querying of both batch and real-time views, making this data accessible to Superset for visualization in unified dashboards.
 \end{itemize}
@@ -500,7 +503,6 @@ By integrating Superset with both the batch and speed layers, the system can pro
 \subsection{Advantages of Using Apache Superset}
 \begin{itemize}
     \item \textbf{Ease of Use}: Superset provides an intuitive drag-and-drop interface for creating visualizations and dashboards, making it accessible to non-technical users.
-    \item \textbf{Wide Data Source Support}: With native connectors for Hive and the ability to support MongoDB through connectors, Superset seamlessly integrates with the current architecture.
     \item \textbf{Real-Time and Batch Data Integration}: The ability to combine data from the speed and batch layers into unified dashboards enables comprehensive analytics and monitoring.
     \item \textbf{Custom Visualization}: Superset supports a variety of visualizations, allowing users to explore data in formats that best suit their needs, from basic bar charts to advanced geographic maps.
     \item \textbf{Scalability}: Being lightweight and web-based, Superset can handle a growing volume of data as the architecture scales.
@@ -512,7 +514,7 @@ While Superset provides significant benefits, there are a few challenges and lim
 \begin{itemize}
     \item \textbf{Indirect Support for Kafka}: Superset does not natively connect to Kafka. Real-time data from Kafka must first be stored in a queryable data store (e.g., MongoDB or a similar OLAP engine) before it can be visualized.
     \item \textbf{MongoDB Support}: Superset does not have native support for MongoDB. A SQL-like connector (such as the MongoDB BI Connector) or transformation of data into another supported format is required, adding some complexity.
-    \item \textbf{Performance Considerations}: For real-time monitoring, performance can be a bottleneck if the underlying data stores (e.g., MongoDB or Hive) are not optimized for frequent querying by Superset.
+    \item \textbf{Performance Considerations}: For real-time monitoring, performance can be a bottleneck if the underlying data stores (e.g., MongoDB or Cassandra) are not optimized for frequent querying by Superset.
     \item \textbf{Learning Curve for Advanced Features}: While the basic interface is user-friendly, advanced configurations (e.g., complex filters, custom SQL queries) may require technical expertise.
 \end{itemize}
 
