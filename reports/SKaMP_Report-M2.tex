@@ -15,6 +15,7 @@
 \usepackage{graphicx}
 \usepackage{float}
 \usepackage{listings}
+\usepackage{tabularx}
 
 \setstretch{1.15} % Adjust the stretch factor as needed
 
@@ -62,7 +63,6 @@
 
 \section*{Introduction}
 \addcontentsline{toc}{section}{Introduction}
-\vspace{\baselineskip} % Add an empty line after the section title
 
 The goal of this project is to plan and implement financial transactions processing system which identifies suspicious and fraudulent activity in real-time. Given the large volume of incoming data, the project will utilize big data technologies as well as advanced machine learning algorithms for anomaly detection.
 
@@ -74,10 +74,10 @@ The project architecture layout was updated to better follow the Lambda architec
 \begin{itemize}
     \item master data storage was moved to the Batch layer;
     \item included NoSQL database as a storage for data querying in the Serving layer;
+    \item Hive has been changed to Cassandra as the main storage solution;
     \item the architecture schema was updated to better represent the data flow. 
 \end{itemize}
 
-\newpage
 
 \section{High level description}
 
@@ -103,19 +103,22 @@ Due to strict security regulations on personal and financial data, it is quite c
 
 \begin{table}[h!]
 \centering
-\begin{tabular}{|p{5cm}|p{4cm}|p{3cm}|p{2cm}|p{1.5cm}|}
+
+
+\begin{tabular}{|p{4.8cm}|p{3.5cm}|p{2cm}|p{2cm}|p{1.5cm}|}
 \hline
 \textbf{Data Source} & \textbf{Content} & \textbf{Volume} &  \textbf{Fraud, \%} & \textbf{Link} \\
 \hline
 1. Fraudulent Transactions Data &  Dataset for predicting fraudulent transactions for a financial company. &  6,362,620 rows and 10 columns (493.53 MB) & 0.13\% & \href{https://www.kaggle.com/datasets/chitwanmanchanda/fraudulent-transactions-data}{Kaggle} \\
 \hline
-2. Credit Card Fraud & Contains features with transactional context. & 1,000,000 transactions (58.9 MB) & 8.7\% & \href{https://www.openml.org/search?type=data&status=active&id=45955}{OpenML} \\
+2. Credit Card Fraud & Contains features with transactional context. & 1,000,000 transactions (58.9 MB) & 8.7\% & \href{https://www.openml.org/search?type=data\&status=active\&id=45955}{OpenML} \\
 \hline
 3. Credit Card Transactions Synthetic Data Generation & A collection of synthetic credit card transaction data. & 1,785,308 transactions; 5,000 customers; (153.66 MB) & 3\% & \href{https://www.kaggle.com/datasets/cgrodrigues/credit-card-transactions-synthetic-data-generation?select=transactions_df.csv}{Kaggle} \\
 \hline
 4. Credit Card Fraud Detection & Transactions made by credit cards in September 2013 by European cardholders. & 284,807 transactions (150.83 MB) & 0.17\% & \href{https://www.kaggle.com/datasets/mlg-ulb/creditcardfraud}{Kaggle} \\
 \hline
 \end{tabular}
+
 \caption{Data sources}
 \end{table}
 
@@ -124,15 +127,13 @@ Data-streaming API was implemented from scratch. The assumption was that it woul
 The content of the datasets is extremely different which makes it impossible to combine them into a single dataset. Therefore, each dataset will be treated separately for both streaming and ML training.
 
 
-\newpage
-
 \subsection{Fraudulent Transactions Data (Kaggle)}
 
 Dataset contains transactions for a financial company, indicating whether it is fraudulent or not. Data for the case is available in CSV format having 6362620 rows and 10 columns. Full column description is presented in the table 2.
 
 \begin{table}[ht!]
 \centering
-\begin{tabular}{|p{4cm}|p{10cm}|p{2cm}|}
+\begin{tabular}{|p{3cm}|p{9.8cm}|p{2cm}|}
 \hline
 \textbf{Column} & \textbf{Content} & \textbf{Type} \\
 \hline
@@ -170,7 +171,6 @@ The following transformation should be done to pass dataset to the ML models:
 
 Generally, the dataset and clean and structured, no other preprocessing, except for the described above is necessary. Potential issue is that it is highly unbalanced (less than 1\% of fraud transactions), and contains quite small amount of features (6) for model training. 
 
-\newpage
 
 \subsection{Credit Card Fraud (OpenML)}
 
@@ -178,7 +178,7 @@ This dataset captures transaction patterns and behaviors that could indicate pot
 
 \begin{table}[ht!]
     \centering
-    \begin{tabular}{|p{5.5cm}|p{8cm}|p{2cm}|}
+    \begin{tabular}{|p{5.5cm}|p{7cm}|p{2cm}|}
     \hline
     \textbf{Column} & \textbf{Content} & \textbf{Type} \\
     \hline
@@ -205,7 +205,6 @@ This dataset captures transaction patterns and behaviors that could indicate pot
 The whole dataset is in the numeric form, therefore, no additional preprocessing is necessary. The only transformation is to rename the target variable to 'isFraud' To match other datasets format.
 The target feature balance is much better than for the previous dataset: 8.7\% of fraud. Additional complication is that feature 'amount' is not available. A ratio to the median purchase of the same customer is provided instead.
 
-\newpage
 
 \subsection{Credit Card Transactions Synthetic Data Generation (Kaggle)}
 
@@ -213,7 +212,7 @@ This dataset is a collection of synthetic credit card transaction data. The data
 
 \begin{table}[ht!]
     \centering
-    \begin{tabular}{|p{5.5cm}|p{8cm}|p{2cm}|}
+    \begin{tabular}{|p{4.5cm}|p{8cm}|p{2cm}|}
     \hline
     \textbf{Column} & \textbf{Content} & \textbf{Type} \\
     \hline
@@ -255,7 +254,6 @@ Like other datasets, it is quite unbalanced with 3\% of fraudulent transactions.
     \item transaction data itself contains only customer id. Therefore, an additional step is to find the customer and add related features to the output.
 \end{enumerate}
 
-\newpage
 
 \subsection{Credit Card Fraud Detection (Kaggle)}
 
@@ -263,7 +261,7 @@ The dataset contains transactions made by credit cards in September 2013 by Euro
 
 \begin{table}[ht!]
     \centering
-    \begin{tabular}{|p{5.5cm}|p{8cm}|p{2cm}|}
+    \begin{tabular}{|p{2.5cm}|p{10cm}|p{2cm}|}
     \hline
     \textbf{Column} & \textbf{Content} & \textbf{Type} \\
     \hline
@@ -518,7 +516,6 @@ While Superset provides significant benefits, there are a few challenges and lim
     \item \textbf{Learning Curve for Advanced Features}: While the basic interface is user-friendly, advanced configurations (e.g., complex filters, custom SQL queries) may require technical expertise.
 \end{itemize}
 
-\newpage
 
 \section{Tasks assignment}
 
@@ -526,7 +523,7 @@ The table below contains the list of team members and preliminary allocation of 
 
 \begin{table}[htbp]
 \centering
-\begin{tabular}{|p{4cm}|p{6cm}|p{4cm}|}
+\begin{tabular}{|p{4cm}|p{6.5cm}|p{4cm}|}
 \hline
 \textbf{Team member} & \textbf{Tasks} & \textbf{Supporter} \\
 \hline
