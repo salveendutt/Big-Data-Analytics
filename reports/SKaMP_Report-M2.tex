@@ -300,6 +300,27 @@ Due to the lack of publicly available open streaming APIs, we designed and imple
 
 When server is started, stream api is avalable on localhost:5000/data/:dataset\_id. Data frequency is configurable on the NiFi side and at the moment is set to 1 row per 2 seconds for each dataset. Format of each incoming transaction is JSON, containing attributes as described for each dataset in chapter 2. To simulate real-world conditions, the streaming API randomly (10\%) returns a 500 error. Example screenshots of the data stream and NiFi are provided in the SKaMP\_Tests.pdf file.
 
+Below we present the NiFi flows for the data acquisition. The first flow is the overview of the whole process, the three processor groups are responsible for fetching and processing the data. Inside each of the processor groups there are:
+\begin{itemize}
+    \item InvokeHTTP - to fetch the data from the stream API,
+    \item EvaluateJsonPath - to extract the data from the JSON format,
+    \item ReplaceText - to construct an CQL query for the Cassandra,
+    \item PublishKafkaRecord - to send the data to the Kafka.
+\end{itemize}
+
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.95\textwidth]{images/m2-nifi-1.png}
+    \caption{NiFi flow for the data acquisition}
+    \label{fig:nifi1}
+\end{figure}
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.95\textwidth]{images/m2-nifi-2.png}
+    \caption{Data processing flow in NiFi}
+    \label{fig:nifi2}
+\end{figure}
 \section{Data storage strategy}
 
 Our input data consists purely of a structured data and there is no need to store special data types, such as images, text files, audio and etc. Therefore, we diceded to utilize SQL-like data warehouse system that enables analytics at a massive scale - Apache Cassandra.
@@ -367,7 +388,7 @@ Figure 1 shows an outline of the project architecture.
 
 \begin{figure}[htbp]
     \centering
-    \includegraphics[width=0.95\textwidth]{images/Architecture-M2.png}
+    \includegraphics[width=0.95\textwidth]{images/m2-architecture.drawio.png}
     \caption{Project architecture}
     \label{fig:sunset}
 \end{figure}
