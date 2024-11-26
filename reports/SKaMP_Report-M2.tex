@@ -300,12 +300,13 @@ Due to the lack of publicly available open streaming APIs, we designed and imple
 
 When server is started, stream api is avalable on localhost:5000/data/:dataset\_id. Data frequency is configurable on the NiFi side and at the moment is set to 1 row per 2 seconds for each dataset. Format of each incoming transaction is JSON, containing attributes as described for each dataset in chapter 2. To simulate real-world conditions, the streaming API randomly (10\%) returns a 500 error. Example screenshots of the data stream and NiFi are provided in the SKaMP\_Tests.pdf file.
 
-Below we present the NiFi flows for the data acquisition. The first flow is the overview of the whole process, the three processor groups are responsible for fetching and processing the data. Inside each of the processor groups there are:
+Below we present the NiFi flows for the data acquisition, processors failures are retried 10 times, errors are logged with LogMessage processor with level 'error'. The first flow is the overview of the whole process, the three processor groups are responsible for fetching and processing the data. Inside each of the processor groups there are:
 \begin{itemize}
     \item InvokeHTTP - to fetch the data from the stream API,
     \item EvaluateJsonPath - to extract the data from the JSON format,
     \item ReplaceText - to construct an CQL query for the Cassandra,
-    \item PublishKafkaRecord - to send the data to the Kafka.
+    \item PublishKafkaRecord - to send the data to the Kafka,
+    \item LogMessage - to log the errors.
 \end{itemize}
 
 
