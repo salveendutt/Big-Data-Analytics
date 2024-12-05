@@ -53,15 +53,17 @@ services:
       - "5001:5001"
     restart: unless-stopped
 
-  batch_processing:
-    image: docker.io/library/batch_processing:latest
-    container_name: batch_processing
-    networks:
-      custom_net:
-        ipv4_address: 192.168.1.107
-    ports:
-      - "5002:5002"
-    restart: unless-stopped
+  # batch_processing:
+  #   image: docker.io/library/batch_processing:latest
+  #   container_name: batch_processing
+  #   networks:
+  #     custom_net:
+  #       ipv4_address: 192.168.1.107
+  #   ports:
+  #     - "5002:5002"
+  #   depends_on:
+  #     - cassandra
+  #   restart: unless-stopped
 
   streaming_processing:
     image: docker.io/library/streaming_processing:latest
@@ -71,6 +73,9 @@ services:
         ipv4_address: 192.168.1.108
     ports:
       - "5003:5003"
+    depends_on:
+      - kafka
+      - nifi
     restart: unless-stopped
 
   cassandra:
