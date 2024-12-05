@@ -132,6 +132,8 @@ services:
     networks:
       custom_net:
         ipv4_address: 192.168.1.106
+    depends_on:
+      - kafka
 
 networks:
   custom_net:
