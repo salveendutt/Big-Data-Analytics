@@ -1,0 +1,76 @@
+example_data_dataset_1 = [
+    {
+        "step": 1,
+        "type": "TRANSFER",
+        "amount": 5000.00,
+        "isFlaggedFraud": 0,
+        "isFraud": 1,
+        "nameDest": "C12345678",
+        "nameOrig": "A98765432",
+        "newbalanceDest": 10000.00,
+        "newbalanceOrig": 0.00,
+        "oldbalanceDest": 5000.00,
+        "oldbalanceOrg": 5000.00,
+    },
+    {
+        "step": 2,
+        "type": "CASH_OUT",
+        "amount": 2000.00,
+        "isFlaggedFraud": 0,
+        "isFraud": 0,
+        "nameDest": "C23456789",
+        "nameOrig": "A87654321",
+        "newbalanceDest": 8000.00,
+        "newbalanceOrig": 3000.00,
+        "oldbalanceDest": 6000.00,
+        "oldbalanceOrg": 5000.00,
+    },
+]
+
+example_data_dataset_2 = [
+    {
+        "distance_from_home": 2.5,
+        "distance_from_last_transaction": 1.2,
+        "fraud": 0,
+        "online_order": 1,
+        "ratio_to_median_purchase_price": 0.8,
+        "repeat_retailer": 1,
+        "used_chip": 1,
+        "used_pin_number": 1,
+    },
+    {
+        "distance_from_home": 10.0,
+        "distance_from_last_transaction": 5.0,
+        "fraud": 1,
+        "online_order": 0,
+        "ratio_to_median_purchase_price": 1.5,
+        "repeat_retailer": 0,
+        "used_chip": 0,
+        "used_pin_number": 0,
+    },
+]
+
+example_data_dataset_3 = [
+    {
+        "amt": 120.50,
+        "bin": "123456",
+        "customer_id": "CUST0001",
+        "entry_mode": "CHIP",
+        "fraud": 0,
+        "fraud_scenario": 0,
+        "post_ts": "2024-12-07T12:00:00Z",
+        "terminal_id": "TERM001",
+        "transaction_id": "TXN0001",
+    },
+    {
+        "amt": 2500.00,
+        "bin": "654321",
+        "customer_id": "CUST0002",
+        "entry_mode": "SWIPE",
+        "fraud": 1,
+        "fraud_scenario": 3,
+        "post_ts": "2024-12-07T13:00:00Z",
+        "terminal_id": "TERM002",
+        "transaction_id": "TXN0002",
+    },
+]
