@@ -11,7 +11,7 @@ if __name__ == "__main__":
             print("Failed to connect to Cassandra")
             exit(1)
         for table in tables:
-            rows = query_cassandra(session, table, query(table))
+            rows = query_cassandra(session, query(table))
             print(f"Query result for {table}: {rows}")
             # TODO: Perform batch processing on the results, we need to create 'views' and then put them into some other DB that is not setup yet
         session.shutdown()
