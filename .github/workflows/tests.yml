@@ -4,6 +4,7 @@ on:
     branches:
       - main
 jobs:
+
   test-processing-simulation:
     runs-on: ubuntu-latest
     steps:
@@ -21,6 +22,7 @@ jobs:
       - name: Run tests
         run: |
           pytest ./services/streaming_simulation ./services/streaming_processing
+
   test-batch:
     runs-on: ubuntu-latest
     steps:

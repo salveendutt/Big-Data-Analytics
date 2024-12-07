@@ -7,6 +7,9 @@ if __name__ == "__main__":
     query = lambda table: f"SELECT * FROM {table} LIMIT 10"
     while True:
         session = create_cassandra_session()
+        if session is None:
+            print("Failed to connect to Cassandra")
+            exit(1)
         for table in tables:
             rows = query_cassandra(session, table, query(table))
             print(f"Query result for {table}: {rows}")

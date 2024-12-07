@@ -23,6 +23,7 @@ def create_cassandra_session():
                 [cassandra_ip], port=cassandra_port, auth_provider=auth_provider
             )
             session = cluster.connect(cassandra_keyspace)
+            return session
         except Exception as e:
             print(f"Attempt {attempts + 1} failed: {e}")
             attempts += 1
@@ -32,7 +33,7 @@ def create_cassandra_session():
             f"Failed to connect to Cassandra after {cassandra_connection_attempts} attempts"
         )
         exit(1)
-    return session
+    return None
 
 
 def query_cassandra(session, query):

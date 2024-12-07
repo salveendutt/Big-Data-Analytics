@@ -1,6 +1,4 @@
 import unittest
-
-
 from utils_streaming_processing import (
     preprocess_row_1,
     preprocess_row_2,
