@@ -18,7 +18,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r ./services/streaming_processing/streaming_processing_requirements.txt
-          pip install -r ./services/streaming_simulation/streaming_simulation_requirements.txt
+          pip install -r ./services/streaming_simulation/streaming-requirements.txt
       - name: Run tests
         run: |
           pytest ./services/streaming_simulation ./services/streaming_processing
