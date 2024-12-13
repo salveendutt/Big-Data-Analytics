@@ -4,8 +4,6 @@ WORKDIR /app
 
 COPY ./services/batch_processing /app
 
-COPY ./datasets /app
-
 RUN pip install --no-cache-dir -r batch_processing_requirements.txt
 
 LABEL Name="batch_processing"

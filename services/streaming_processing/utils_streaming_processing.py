@@ -1,11 +1,59 @@
 from time import sleep
-from kafka import KafkaConsumer, KafkaProducer
+# from kafka import KafkaConsumer, KafkaProducer
 from config_streaming_processing import (
     kafka_address,
     kafka_topics,
     kafka_connection_attempts,
     kafka_connection_attempts_delay,
+    kafka_topic_processed,
 )
+from pyspark.sql import SparkSession
+from pyspark.sql.types import StructType, StringType
+from pyspark.sql.functions import from_json, col, lit
+
+
+def create_spark_session():
+    return (
+        SparkSession.builder.appName("StreamingProcessing")
+        .master("spark://spark-master:7077")
+        .getOrCreate()
+    )
+
+
+def kafka_schema():
+    return StructType().add("key", StringType()).add("value", StringType())
+
+
+def kafka_stream_subscription(sparkSession):
+    return (
+        sparkSession.readStream.format("kafka")
+        .option("kafka.bootstrap.servers", kafka_address)
+        .option("subscribe", ",".join(kafka_topics))
+        .load()
+    )
+
+
+def process_kafka_stream(streamingDataFrame, kafkaSchema):
+    streamingDataFrame.selectExpr("CAST(value AS STRING) as raw_value").withColumn(
+        "data", from_json(col("raw_value"), kafkaSchema)
+    ).select(
+        col("data.key").alias("key"),
+        col("data.value").alias("value"),
+        lit(True).alias("processed"),
+        lit("KafkaSource").alias("source_topic"),
+    )
+
+
+def send_to_kafka_stream(processedDataFrame):
+    processedDataFrame.selectExpr(
+        "CAST(key AS STRING) AS key", "to_json(struct(*)) AS value"
+    ).writeStream.format("kafka").option(
+        "kafka.bootstrap.servers", kafka_address
+    ).option(
+        "topic", kafka_topic_processed
+    ).option(
+        "checkpointLocation", "/tmp/spark_checkpoint"
+    ).start()
 
 
 def create_kafka_consumer():
