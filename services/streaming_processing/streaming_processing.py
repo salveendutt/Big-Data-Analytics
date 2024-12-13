@@ -14,6 +14,13 @@ from datetime import datetime
 import config_streaming_processing as config
 import logging
 from kafka.errors import NoBrokersAvailable
+scala_version = '2.12'
+spark_version = '3.5.3'
+
+packages = [
+    f'org.apache.spark:spark-sql-kafka-0-10_{scala_version}:{spark_version}',
+    'org.apache.kafka:kafka-clients:3.2.3'
+]
 
 class FraudDetectionPipeline:
     def __init__(self):
@@ -43,7 +50,7 @@ class FraudDetectionPipeline:
                 .appName("Fraud Detection Pipeline") \
                 .master(os.environ.get('SPARK_MASTER', 'local[*]')) \
                 .config("spark.sql.streaming.checkpointLocation", "/tmp/checkpoint") \
-                .config("spark.jars.packages", "org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.0") \
+                .config("spark.jars.packages", ",".join(packages)) \
                 .getOrCreate()
         except Exception as e:
             self.logger.error(f"Failed to initialize Spark: {e}")
