@@ -53,6 +53,60 @@ services:
       - "5001:5001"
     restart: unless-stopped
 
+  batch_processing:
+    image: docker.io/library/batch_processing:latest
+    container_name: batch_processing
+    networks:
+      custom_net:
+        ipv4_address: 192.168.1.107
+    ports:
+      - "5002:5002"
+    depends_on:
+      - cassandra
+      - nifi
+    restart: unless-stopped
+
+  streaming_processing:
+    image: docker.io/library/streaming_processing:latest
+    container_name: streaming_processing
+    networks:
+      custom_net:
+        ipv4_address: 192.168.1.108
+    ports:
+      - "5003:5003"
+    depends_on:
+      - kafka
+      - nifi
+      - spark-master
+    restart: unless-stopped
+
+
+  spark-master:
+    image: bitnami/spark:latest
+    container_name: spark-master
+    environment:
+      SPARK_MODE: master
+      SPARK_MASTER_HOST: spark-master
+    ports:
+      - "7077:7077" 
+      - "8080:8080"
+    networks:
+      custom_net:
+        ipv4_address: 192.168.1.109
+
+  spark-worker:
+    image: bitnami/spark:latest
+    container_name: spark-worker
+    environment:
+      SPARK_MODE: worker
+      SPARK_MASTER_URL: spark://spark-master:7077
+      SPARK_WORKER_MEMORY: 2G
+      SPARK_WORKER_CORES: 2
+    depends_on:
+      - spark-master
+    networks:
+      custom_net:
+        ipv4_address: 192.168.1.110
 
   cassandra:
     image: bitnami/cassandra:latest
@@ -108,6 +162,8 @@ services:
     networks:
       custom_net:
         ipv4_address: 192.168.1.106
+    depends_on:
+      - kafka
 
 networks:
   custom_net:

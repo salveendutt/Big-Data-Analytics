@@ -1,7 +1,5 @@
 import unittest
-from flask import Flask
 from streaming_simulation import app
-import os
 
 
 class StreamingSimulationTestCase(unittest.TestCase):

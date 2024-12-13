@@ -2,12 +2,12 @@
 
 ## How to run
 
-1. Make sure you have docker and Python 3.13.0 installed
-2. Download datasets pointed below
-3. Start docker desktop
+1. Make sure you have docker installed
+2. Start docker desktop
+3. Download datasets pointed below
 4. Modify config files if needed
-5. Because of different line endings on Windows vs Unix, one needs to change line endings in ./services/nifi/conf/bootstrap.conf to LF or else it will fail to launch with 'The specified run.as user does not exist. Exiting.'
-5. Run start_containers.bat
+5. Navigate to 'scripts' folder and run start_containers.bat
+6. After a couple of minutes, you should be able to access the services (look at docker-compose for ports and addresses, look at authorization-access-data.json for credentials)
 
 ## Data
 
