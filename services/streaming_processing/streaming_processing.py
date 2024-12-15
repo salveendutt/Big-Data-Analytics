@@ -1,6 +1,6 @@
 import time
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import col, when, from_json, lit, hour
+from pyspark.sql.functions import col, when, from_json, lit, hour, to_timestamp
 from pyspark.sql.types import StructType, StructField, StringType, DoubleType, IntegerType, TimestampType
 from pyspark.ml import Pipeline
 from pyspark.ml.feature import VectorAssembler, StringIndexer
@@ -14,13 +14,8 @@ from datetime import datetime
 import config_streaming_processing as config
 import logging
 from kafka.errors import NoBrokersAvailable
-scala_version = '2.12'
-spark_version = '3.5.3'
+import numpy
 
-packages = [
-    f'org.apache.spark:spark-sql-kafka-0-10_{scala_version}:{spark_version}',
-    'org.apache.kafka:kafka-clients:3.2.3'
-]
 
 class FraudDetectionPipeline:
     def __init__(self):
@@ -30,7 +25,8 @@ class FraudDetectionPipeline:
             format='%(asctime)s - %(levelname)s - %(message)s'
         )
         self.logger = logging.getLogger(__name__)
-        
+        # Convert timestamp string to datetime object
+        self.timestamp_format = "yyyy-MM-dd'T'HH:mm:ss'Z'"
         # Initialize Spark session
         self.spark = self._initialize_spark()
         
@@ -47,11 +43,12 @@ class FraudDetectionPipeline:
         """Initialize Spark session with retry logic"""
         try:
             return SparkSession.builder \
-                .appName("Fraud Detection Pipeline") \
-                .master(os.environ.get('SPARK_MASTER', 'local[*]')) \
+                .master(config.spark_master_address) \
                 .config("spark.sql.streaming.checkpointLocation", "/tmp/checkpoint") \
-                .config("spark.jars.packages", ",".join(packages)) \
+                .config("spark.jars.packages", config.spark_jars_packages) \
+                .appName("Fraud Detection Pipeline") \
                 .getOrCreate()
+
         except Exception as e:
             self.logger.error(f"Failed to initialize Spark: {e}")
             raise
@@ -104,7 +101,7 @@ class FraudDetectionPipeline:
             StructField("type", StringType()),
             StructField("amount", DoubleType()),
             StructField("isFlaggedFraud", IntegerType()),
-            StructField("isFraud", IntegerType()),
+            StructField("fraud", IntegerType()),
             StructField("nameDest", StringType()),
             StructField("nameOrig", StringType()),
             StructField("newbalanceDest", DoubleType()),
@@ -131,7 +128,7 @@ class FraudDetectionPipeline:
             StructField("entry_mode", StringType()),
             StructField("fraud", IntegerType()),
             StructField("fraud_scenario", IntegerType()),
-            StructField("post_ts", TimestampType()),
+            StructField("post_ts", StringType()),
             StructField("terminal_id", StringType()),
             StructField("transaction_id", StringType())
         ])
@@ -176,6 +173,7 @@ class FraudDetectionPipeline:
         """Preprocess dataset3 specific features"""
         try:
             entry_mode_indexer = StringIndexer(inputCol="entry_mode", outputCol="entry_mode_index")
+            df = df.withColumn("post_ts", to_timestamp(col("post_ts"), self.timestamp_format))
             df = df.withColumn("hour", hour(col("post_ts")))
             return df, [entry_mode_indexer]
         except Exception as e:
@@ -202,7 +200,8 @@ class FraudDetectionPipeline:
         """Train the Random Forest model"""
         try:
             # Convert training data to Spark DataFrames
-            train_df1 = self.spark.createDataFrame(training_data1, self.schema1)
+            train_data1_modified = [{**d, 'fraud': d.get('isFraud')} for d in training_data1]
+            train_df1 = self.spark.createDataFrame(train_data1_modified, self.schema1)
             train_df2 = self.spark.createDataFrame(training_data2, self.schema2)
             train_df3 = self.spark.createDataFrame(training_data3, self.schema3)
             
@@ -243,14 +242,17 @@ class FraudDetectionPipeline:
         """Process messages from all Kafka topics"""
         messages = {topic: None for topic in config.kafka_topics}
         
-        # Get one message from each topic
         try:
             for topic, consumer in self.consumers.items():
                 messages[topic] = next(consumer)
             
             if all(messages.values()):
+                # Modify dataset1 message to use 'fraud' instead of 'isFraud'
+                message1 = messages['dataset1'].value
+                message1['fraud'] = message1.pop('isFraud') if 'isFraud' in message1 else 0
+                
                 # Convert messages to DataFrames
-                df1 = self.spark.createDataFrame([messages['dataset1'].value], self.schema1)
+                df1 = self.spark.createDataFrame([message1], self.schema1)
                 df2 = self.spark.createDataFrame([messages['dataset2'].value], self.schema2)
                 df3 = self.spark.createDataFrame([messages['dataset3'].value], self.schema3)
                 

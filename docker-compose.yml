@@ -78,7 +78,7 @@ services:
       - kafka
       - nifi
       - spark-master
-    restart: unless-stopped
+
 
 
   spark-master:
