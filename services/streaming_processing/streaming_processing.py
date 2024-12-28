@@ -224,7 +224,12 @@ class FraudDetectionPipeline:
             
             # Create and train pipeline
             pipeline = Pipeline(stages=transformers1 + transformers2 + transformers3 + [assembler, rf])
-            self.model = pipeline.fit(train_df1.join(train_df2, ["fraud"]).join(train_df3, ["fraud"]))
+            train_df = train_df1.join(train_df2, ["fraud"]).join(train_df3, ["fraud"])
+            
+            if (train_df.count() < 2):
+                self.logger.error("Not enough data for training")
+                return
+            self.model = pipeline.fit(train_df)
             
             # Calculate training metrics
             predictions = self.model.transform(
