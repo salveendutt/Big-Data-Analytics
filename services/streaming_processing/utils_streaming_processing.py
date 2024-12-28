@@ -1,6 +1,6 @@
 from time import sleep
 
-# from kafka import KafkaConsumer, KafkaProducer
+from kafka import KafkaConsumer, KafkaProducer
 from config_streaming_processing import (
     kafka_address,
     kafka_topics,

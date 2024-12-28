@@ -78,11 +78,11 @@ services:
       - kafka
       - nifi
       - spark-master
-    restart: unless-stopped
+
 
 
   spark-master:
-    image: bitnami/spark:latest
+    image: bitnami/spark:3.5.3
     container_name: spark-master
     environment:
       SPARK_MODE: master
@@ -95,7 +95,7 @@ services:
         ipv4_address: 192.168.1.109
 
   spark-worker:
-    image: bitnami/spark:latest
+    image: bitnami/spark:3.5.3
     container_name: spark-worker
     environment:
       SPARK_MODE: worker
@@ -109,7 +109,7 @@ services:
         ipv4_address: 192.168.1.110
 
   cassandra:
-    image: bitnami/cassandra:latest
+    image: bitnami/cassandra:5.0.2
     container_name: cassandra
     ports:
       - "9042:9042"
@@ -127,7 +127,7 @@ services:
     #   - ./services/cassandra/cassandra/data:/var/lib/cassandra/data  
 
   kafka:
-    image: confluentinc/cp-kafka:latest
+    image: confluentinc/cp-kafka:7.8.0
     container_name: kafka
     depends_on:
       - zookeeper
@@ -144,7 +144,7 @@ services:
 
 
   zookeeper:
-    image: zookeeper:latest
+    image: zookeeper:3.9.3
     container_name: zookeeper
     ports:
       - "2181:2181"
@@ -153,7 +153,7 @@ services:
         ipv4_address: 192.168.1.104
 
   kafdrop:
-    image: obsidiandynamics/kafdrop:latest
+    image: obsidiandynamics/kafdrop:4.1.0
     container_name: kafdrop
     environment:
       KAFKA_BROKERCONNECT: kafka:9092
