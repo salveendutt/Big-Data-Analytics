@@ -143,89 +143,54 @@ services:
       - kafka
 
   namenode:
-    image: apache/hadoop:3
-    hostname: namenode
-    ports:
-      - 9870:9870
-    env_file:
-      - ./services/hadoop/env
+    image: bde2020/hadoop-namenode:2.0.0-hadoop2.7.4-java8
+    volumes:
+      - namenode:/hadoop/dfs/name
     environment:
-      ENSURE_NAMENODE_DIR: "/tmp/hadoop-root/dfs/name"
-    command: ["hdfs", "namenode"]
+      - CLUSTER_NAME=test
+    env_file:
+      - ./hadoop-hive.env
+    ports:
+      - "50070:50070"
   datanode:
-    image: apache/hadoop:3
-    command: [ "hdfs", "datanode" ]
-    env_file:
-      - ./services/hadoop/env
-  resourcemanager:
-    image: apache/hadoop:3
-    hostname: resourcemanager
-    command: [ "yarn", "resourcemanager" ]
-    ports:
-      - 8088:8088
-    env_file:
-      - ./services/hadoop/env
+    image: bde2020/hadoop-datanode:2.0.0-hadoop2.7.4-java8
     volumes:
-      - ./test.sh:/opt/test.sh
-  nodemanager:
-    image: apache/hadoop:3
-    command: [ "yarn", "nodemanager" ]
+      - datanode:/hadoop/dfs/data
     env_file:
-      - ./services/hadoop/env
-
-  hive-metastore-postgresql:
-    image: postgres:12
-    container_name: hive-metastore-postgresql
+      - ./hadoop-hive.env
     environment:
-      - POSTGRES_DB=metastore
-      - POSTGRES_USER=hive
-      - POSTGRES_PASSWORD=hive
-    networks:
-      custom_net:
-        ipv4_address: 192.168.1.114
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-
-  hive-metastore:
-    image: apache/hive:3.1.3
-    container_name: hive-metastore
-    env_file:
-      - ./services/hadoop/env
-    environment:
-      - DB_DRIVER=postgres
-      - SERVICE_NAME=metastore
-    volumes:
-      - ./services/hive/hive-site.xml:/opt/hive/conf/hive-site.xml
+      SERVICE_PRECONDITION: "namenode:50070"
     ports:
-      - "9083:9083"
-    depends_on:
-      - namenode
-      - hive-metastore-postgresql
-    networks:
-      custom_net:
-        ipv4_address: 192.168.1.113
-    command: ["sh", "-c", "schematool -initSchema -dbType postgres && hive --service metastore"]
-
+      - "50075:50075"
   hive-server:
-    image: apache/hive:3.1.3
-    container_name: hive-server
+    image: bde2020/hive:2.3.2-postgresql-metastore
     env_file:
-      - ./services/hadoop/env
+      - ./hadoop-hive.env
     environment:
-      - DB_DRIVER=postgres
-      - SERVICE_NAME=hiveserver2
-    volumes:
-      - ./services/hive/hive-site.xml:/opt/hive/conf/hive-site.xml
+      HIVE_CORE_CONF_javax_jdo_option_ConnectionURL: "jdbc:postgresql://hive-metastore/metastore"
+      SERVICE_PRECONDITION: "hive-metastore:9083"
     ports:
       - "10000:10000"
-      - "10002:10002"
-    depends_on:
-      - namenode
-      - hive-metastore
-    networks:
-      custom_net:
-        ipv4_address: 192.168.1.112
-    command: ["hiveserver2"]
+  hive-metastore:
+    image: bde2020/hive:2.3.2-postgresql-metastore
+    env_file:
+      - ./hadoop-hive.env
+    command: /opt/hive/bin/hive --service metastore
+    environment:
+      SERVICE_PRECONDITION: "namenode:50070 datanode:50075 hive-metastore-postgresql:5432"
+    ports:
+      - "9083:9083"
+  hive-metastore-postgresql:
+    image: bde2020/hive-metastore-postgresql:2.3.0
+  presto-coordinator:
+    image: shawnzhu/prestodb:0.181
+    ports:
+      - "8080:8080"
+
+volumes:
+  namenode:
+  datanode:
+
 
 networks:
   custom_net:
@@ -233,8 +198,3 @@ networks:
     ipam:
       config:
         - subnet: 192.168.1.0/24
-
-volumes:
-  hadoop_namenode:
-  hadoop_datanode:
-  postgres_data:
