@@ -7,16 +7,21 @@ services:
       - "8443:8443"
     environment:
       NIFI_WEB_HTTPS_PORT: 8443
+      # NIFI_CLUSTER_IS_NODE: 'false'
+      # NIFI_ELECTION_MAX_WAIT: '1 min'
     depends_on:
-      - cassandra
-      - zookeeper
+      # - cassandra
+      # - zookeeper
       - streaming_simulation
-      - kafka
+      # - kafka
+      - namenode
+      - datanode
     networks:
       custom_net:
         ipv4_address: 192.168.1.102
     volumes:
       - ./services/nifi/conf:/opt/nifi/nifi-current/conf
+      - ./services/hadoop/config:/opt/hadoop/conf
     #   - ./services/nifi/nar_extensions:/opt/nifi/nifi-current/nar_extensions
     #   - ./services/nifi/extensions:/opt/nifi/nifi-current/extensions
     
@@ -145,20 +150,28 @@ services:
   namenode:
     image: bde2020/hadoop-namenode:2.0.0-hadoop2.7.4-java8
     container_name: namenode
-    # volumes:
-    #   - ./hdfs/namenode:/hadoop/dfs/name
+    volumes:
+      - hadoop_namenode:/hadoop/dfs/name
+      - ./services/hadoop/config/core-site.xml:/etc/hadoop/core-site.xml
+      - ./services/hadoop/config/hdfs-site.xml:/etc/hadoop/hdfs-site.xml
     environment:
       - CLUSTER_NAME=hive
     env_file:
       - ./services/hive/hadoop-hive.env
     ports:
       - "50070:50070"
+      - "8020:8020"
+    networks:
+      custom_net:
+        ipv4_address: 192.168.1.115
 
   datanode:
     image: bde2020/hadoop-datanode:2.0.0-hadoop2.7.4-java8
     container_name: datanode
-    # volumes:
-    #   - ./hdfs/datanode:/hadoop/dfs/data
+    volumes:
+      - hadoop_datanode:/hadoop/dfs/data
+      - ./services/hadoop/config/core-site.xml:/etc/hadoop/core-site.xml
+      - ./services/hadoop/config/hdfs-site.xml:/etc/hadoop/hdfs-site.xml
     env_file:
       - ./services/hive/hadoop-hive.env
     environment:
@@ -167,6 +180,9 @@ services:
       - namenode
     ports:
       - "50075:50075"
+    networks:
+      custom_net:
+        ipv4_address: 192.168.1.116
 
   hive-server:
     image: bde2020/hive:2.3.2-postgresql-metastore
@@ -210,3 +226,7 @@ networks:
     ipam:
       config:
         - subnet: 192.168.1.0/24
+
+volumes:
+  hadoop_namenode:
+  hadoop_datanode:
