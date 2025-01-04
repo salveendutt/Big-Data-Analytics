@@ -7,38 +7,36 @@ use fraud;
 CREATE EXTERNAL TABLE if not exists dataset1 (
     step INT,
     type STRING,
-    amount DOUBLE,
-    isFlaggedFraud INT,
-    isFraud INT,
-    nameDest STRING,
+    amount FLOAT,
     nameOrig STRING,
-    newbalanceDest DOUBLE,
-    newbalanceOrig DOUBLE,
-    oldbalanceDest DOUBLE,
-    oldbalanceOrg DOUBLE
+    oldbalanceOrg FLOAT,
+    newbalanceOrig FLOAT,
+    nameDest STRING,
+    oldbalanceDest FLOAT,
+    newbalanceDest FLOAT,
+    isFraud INT,
+    isFlaggedFraud INT
 )
 PARTITIONED BY (year STRING, month STRING, day STRING)
 STORED AS PARQUET
 LOCATION '/user/hive/warehouse/dataset1';
 
-
 CREATE EXTERNAL TABLE if not exists dataset2 (
-    distance_from_home DOUBLE,
-    distance_from_last_transaction DOUBLE,
+    distance_from_home FLOAT,
+    distance_from_last_transaction FLOAT,
     fraud INT,
-    online_order INT,
-    ratio_to_median_purchase_price DOUBLE,
+    ratio_to_median_purchase_price FLOAT,
     repeat_retailer INT,
     used_chip INT,
-    used_pin_number INT
+    used_pin_number INT,
+    online_order INT
 )
 PARTITIONED BY (year STRING, month STRING, day STRING)
 STORED AS PARQUET
 LOCATION '/user/hive/warehouse/dataset2';
 
-
 CREATE EXTERNAL TABLE if not exists dataset3 (
-    amt DOUBLE,
+    amt FLOAT,
     bin INT,
     customer_id STRING,
     entry_mode STRING,

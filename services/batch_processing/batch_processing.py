@@ -3,6 +3,7 @@ from pyspark.sql import SparkSession
 from pyspark.sql.functions import count, avg, sum, col, when, desc, hour, dayofweek, month, year
 from cassandra.cluster import Cluster
 from cassandra.auth import PlainTextAuthProvider
+from pyspark.sql.types import StructType, StructField, StringType, FloatType, IntegerType
 
 def create_spark_session():
     """Create a Spark session with Hive support"""
@@ -59,7 +60,7 @@ def create_and_save_views(spark, cassandra_session):
                     VALUES (%s, %s, %s, %s, %s)
                     """,
                     (row.type, row.total_transactions, row.total_fraudulent, 
-                     row.avg_amount, row.fraud_rate)
+                     float(row.avg_amount), float(row.fraud_rate))
                 )
         
         if df3 is not None:
@@ -78,7 +79,7 @@ def create_and_save_views(spark, cassandra_session):
                     (hour, total_transactions, total_fraudulent, avg_amount)
                     VALUES (%s, %s, %s, %s)
                     """,
-                    (row.hour, row.total_transactions, row.total_fraudulent, row.avg_amount)
+                    (row.hour, row.total_transactions, row.total_fraudulent, float(row.avg_amount))
                 )
             
             # View 3: High-risk customer analysis
@@ -100,7 +101,7 @@ def create_and_save_views(spark, cassandra_session):
                     VALUES (%s, %s, %s, %s, %s)
                     """,
                     (row.customer_id, row.total_transactions, row.fraudulent_transactions,
-                     row.total_amount, row.fraud_rate)
+                     float(row.total_amount), float(row.fraud_rate))
                 )
                 
     except Exception as e:

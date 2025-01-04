@@ -46,7 +46,7 @@ services:
       - "5002:5002"
     depends_on:
       - cassandra
-      - nifi
+
     restart: unless-stopped
 
   streaming_processing:

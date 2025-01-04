@@ -1,7 +1,7 @@
 import time
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import col, when, from_json, lit, hour, to_timestamp
-from pyspark.sql.types import StructType, StructField, StringType, DoubleType, IntegerType, TimestampType
+from pyspark.sql.types import StructType, StructField, StringType, FloatType, IntegerType, TimestampType
 from pyspark.ml import Pipeline
 from pyspark.ml.feature import VectorAssembler, StringIndexer
 from pyspark.ml.classification import RandomForestClassifier
@@ -119,22 +119,22 @@ class FraudDetectionPipeline:
         self.schema1 = StructType([
             StructField("step", IntegerType()),
             StructField("type", StringType()),
-            StructField("amount", DoubleType()),
+            StructField("amount", FloatType()),
             StructField("nameOrig", StringType()),
-            StructField("oldbalanceOrg", DoubleType()),
-            StructField("newbalanceOrig", DoubleType()),
+            StructField("oldbalanceOrg", FloatType()),
+            StructField("newbalanceOrig", FloatType()),
             StructField("nameDest", StringType()),
-            StructField("oldbalanceDest", DoubleType()),
-            StructField("newbalanceDest", DoubleType()),
+            StructField("oldbalanceDest", FloatType()),
+            StructField("newbalanceDest", FloatType()),
             StructField("isFraud", IntegerType()),
             StructField("isFlaggedFraud", IntegerType())
         ])
 
         self.schema2 = StructType([
-            StructField("distance_from_home", DoubleType()),
-            StructField("distance_from_last_transaction", DoubleType()),
+            StructField("distance_from_home", FloatType()),
+            StructField("distance_from_last_transaction", FloatType()),
             StructField("fraud", IntegerType()),
-            StructField("ratio_to_median_purchase_price", DoubleType()),
+            StructField("ratio_to_median_purchase_price", FloatType()),
             StructField("repeat_retailer", IntegerType()),
             StructField("used_chip", IntegerType()),
             StructField("used_pin_number", IntegerType()),
@@ -142,7 +142,7 @@ class FraudDetectionPipeline:
         ])
 
         self.schema3 = StructType([
-            StructField("amt", DoubleType()),
+            StructField("amt", FloatType()),
             StructField("bin", IntegerType()),
             StructField("customer_id", StringType()),
             StructField("entry_mode", StringType()),
