@@ -1,7 +1,13 @@
 import time
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import col, when, from_json, lit, hour, to_timestamp
-from pyspark.sql.types import StructType, StructField, StringType, FloatType, IntegerType, TimestampType
+from pyspark.sql.functions import (
+    col, when, from_json, lit, hour, to_timestamp, 
+    concat, count, avg, sum, udf
+)
+from pyspark.sql.types import (
+    StructType, StructField, StringType, FloatType, 
+    IntegerType, TimestampType, DoubleType
+)
 from pyspark.ml import Pipeline
 from pyspark.ml.feature import VectorAssembler, StringIndexer
 from pyspark.ml.classification import RandomForestClassifier
@@ -16,7 +22,7 @@ from datetime import datetime
 import config_streaming_processing as config
 import logging
 from kafka.errors import NoBrokersAvailable
-import numpy
+import numpy as np
 import uuid
 
 
@@ -43,18 +49,20 @@ class FraudDetectionPipeline:
         # Initialize Cassandra connection
         self.cassandra_session = self._initialize_cassandra()
         
-        # Try to load existing model or set to None
-        self.model = self.load_latest_model_from_hdfs()
-        self.model_version = "latest" if self.model else "1.0.0"
+        # Initialize models
+        self.model1, self.model2, self.model3 = self.load_latest_models_from_hdfs()
+        self.model_version = "latest" if self.model1 else "1.0.0"
 
     def _initialize_spark(self):
         """Initialize Spark session with retry logic"""
         try:
             return SparkSession.builder \
                 .master(config.spark_master_address) \
-                .config("spark.sql.warehouse.dir", "/user/hive/warehouse") \
+                .config("spark.sql.warehouse.dir", "hdfs://namenode:8020/user/hive/warehouse") \
                 .config("spark.sql.streaming.checkpointLocation", "/tmp/checkpoint") \
                 .config("spark.jars.packages", config.spark_jars_packages) \
+                .config("spark.hadoop.fs.defaultFS", "hdfs://namenode:8020") \
+                .config("spark.hadoop.dfs.client.use.datanode.hostname", "true") \
                 .appName("Fraud Detection Pipeline") \
                 .getOrCreate()
 
@@ -122,7 +130,7 @@ class FraudDetectionPipeline:
             StructField("amount", FloatType()),
             StructField("nameOrig", StringType()),
             StructField("oldbalanceOrg", FloatType()),
-            StructField("newbalanceOrig", FloatType()),
+            StructField("newbalanceOrg", FloatType()),
             StructField("nameDest", StringType()),
             StructField("oldbalanceDest", FloatType()),
             StructField("newbalanceDest", FloatType()),
@@ -153,58 +161,263 @@ class FraudDetectionPipeline:
             StructField("transaction_id", StringType())
         ])
 
-    def save_model_to_hdfs(self, model):
-        """Save the trained model to HDFS"""
+    def create_feature_vector1(self, df):
+        """Create feature vector for model1 (dataset1)"""
         try:
-            # Generate model path with timestamp
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            model_path = f"/user/models/fraud_detection/model_{timestamp}"
+            # Add transaction_id column if it doesn't exist
+            df = df.withColumn("transaction_id", 
+                             when(col("nameOrig").isNotNull(), 
+                                  concat(col("nameOrig"), lit("_"), col("step").cast("string")))
+                             .otherwise(lit(str(uuid.uuid4()))))
             
-            # Save model to HDFS
-            model.save(model_path)
+            feature_cols = [
+                "amount", "amount_to_balance_ratio"
+            ]
             
-            # Update model version to match the saved path
-            self.model_version = f"model_{timestamp}"
-            self.logger.info(f"Successfully saved model to HDFS: {model_path}")
-            
-            return model_path
-        except Exception as e:
-            self.logger.error(f"Error saving model to HDFS: {str(e)}")
-            raise
-
-    def load_latest_model_from_hdfs(self):
-        """Load the latest model from HDFS"""
-        try:
-            # List all models in the directory
-            models_path = "/user/models/fraud_detection"
-            models = self.spark._jvm.org.apache.hadoop.fs.Path(models_path)
-            fs = models.getFileSystem(self.spark._jsc.hadoopConfiguration())
-            
-            if not fs.exists(models):
-                self.logger.info("No existing models found in HDFS")
-                return None
-            
-            # Get all model directories
-            status = fs.listStatus(models)
-            if not status:
-                return None
-            
-            # Find the latest model
-            latest_model = max(
-                [path.getPath().toString() for path in status],
-                key=lambda x: x.split('_')[-1]
+            assembler = VectorAssembler(
+                inputCols=feature_cols,
+                outputCol="features"
             )
             
-            # Load the model
-            from pyspark.ml import PipelineModel
-            model = PipelineModel.load(latest_model)
-            self.model_version = latest_model.split('/')[-1]
-            self.logger.info(f"Successfully loaded model from HDFS: {latest_model}")
-            
-            return model
+            # Select all necessary columns including those needed for predictions
+            return assembler.transform(df).select(
+                "features", "fraud", "transaction_id", "type", 
+                "amount", "nameOrig", "nameDest"
+            )
         except Exception as e:
-            self.logger.error(f"Error loading model from HDFS: {str(e)}")
-            return None
+            self.logger.error(f"Error creating feature vector for model1: {str(e)}")
+            raise
+
+    def create_feature_vector2(self, df):
+        """Create feature vector for model2 (dataset2)"""
+        try:
+            feature_cols = [
+                "distance_from_home", "distance_from_last_transaction",
+                "ratio_to_median_purchase_price", "repeat_retailer",
+                "used_chip", "used_pin_number", "online_order"
+            ]
+            
+            assembler = VectorAssembler(
+                inputCols=feature_cols,
+                outputCol="features"
+            )
+            
+            return assembler.transform(df).select("features", "fraud")
+        except Exception as e:
+            self.logger.error(f"Error creating feature vector for model2: {str(e)}")
+            raise
+
+    def create_feature_vector3(self, df):
+        """Create feature vector for model3 (dataset3)"""
+        try:
+            feature_cols = ["amt"]
+            
+            assembler = VectorAssembler(
+                inputCols=feature_cols,
+                outputCol="features"
+            )
+            
+            return assembler.transform(df).select(
+                "features", "fraud", "customer_id", "transaction_id"
+            )
+        except Exception as e:
+            self.logger.error(f"Error creating feature vector for model3: {str(e)}")
+            raise
+
+    def train_models(self, training_data1, training_data2, training_data3):
+        """Train all three models using their respective datasets"""
+        try:
+            # Convert training data to DataFrames
+            train_data1 = self.spark.createDataFrame(training_data1)
+            train_data2 = self.spark.createDataFrame(training_data2)
+            train_data3 = self.spark.createDataFrame(training_data3)
+            
+            # Preprocess training data
+            train_data1 = self.preprocess_dataset1(train_data1)
+            train_data2 = self.preprocess_dataset2(train_data2)
+            train_data3 = self.preprocess_dataset3(train_data3)
+            
+            # Create feature vectors
+            train_data1 = self.create_feature_vector1(train_data1)
+            train_data2 = self.create_feature_vector2(train_data2)
+            train_data3 = self.create_feature_vector3(train_data3)
+            
+            # Initialize models
+            rf1 = RandomForestClassifier(labelCol="fraud", featuresCol="features", numTrees=10)
+            rf2 = RandomForestClassifier(labelCol="fraud", featuresCol="features", numTrees=10)
+            rf3 = RandomForestClassifier(labelCol="fraud", featuresCol="features", numTrees=10)
+            
+            # Create pipelines
+            pipeline1 = Pipeline(stages=[rf1])
+            pipeline2 = Pipeline(stages=[rf2])
+            pipeline3 = Pipeline(stages=[rf3])
+            
+            # Train models
+            self.model1 = pipeline1.fit(train_data1)
+            self.model2 = pipeline2.fit(train_data2)
+            self.model3 = pipeline3.fit(train_data3)
+            
+            # Save models with timestamp
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            
+            # Save models to HDFS with proper paths
+            base_path = "hdfs://namenode:8020/user/models/fraud_detection"
+            
+            # Ensure base directory exists
+            fs = self.spark._jvm.org.apache.hadoop.fs.FileSystem.get(
+                self.spark._jsc.hadoopConfiguration()
+            )
+            base_path_hdfs = self.spark._jvm.org.apache.hadoop.fs.Path(base_path)
+            if not fs.exists(base_path_hdfs):
+                fs.mkdirs(base_path_hdfs)
+            
+            # Save each model
+            model1_path = f"{base_path}/model1_{timestamp}"
+            model2_path = f"{base_path}/model2_{timestamp}"
+            model3_path = f"{base_path}/model3_{timestamp}"
+            
+            self.model1.write().overwrite().save(model1_path)
+            self.model2.write().overwrite().save(model2_path)
+            self.model3.write().overwrite().save(model3_path)
+            
+            self.model_version = timestamp
+            self.logger.info(f"Successfully trained and saved models version {timestamp}")
+            
+        except Exception as e:
+            self.logger.error(f"Error training models: {str(e)}")
+            raise
+
+    def load_latest_models_from_hdfs(self):
+        """Load the latest models from HDFS"""
+        try:
+            # Use proper HDFS path
+            base_path = "hdfs://namenode:8020/user/models/fraud_detection"
+            
+            # Get filesystem
+            fs = self.spark._jvm.org.apache.hadoop.fs.FileSystem.get(
+                self.spark._jsc.hadoopConfiguration()
+            )
+            base_path_hdfs = self.spark._jvm.org.apache.hadoop.fs.Path(base_path)
+            
+            if not fs.exists(base_path_hdfs):
+                self.logger.info("No existing models found in HDFS")
+                return None, None, None
+            
+            # List all directories in base path
+            model_dirs = []
+            for status in fs.listStatus(base_path_hdfs):
+                if status.isDirectory():
+                    model_dirs.append(status.getPath().getName())
+            
+            if not model_dirs:
+                self.logger.info("No model directories found")
+                return None, None, None
+            
+            # Find latest timestamp
+            timestamps = set()
+            for dir_name in model_dirs:
+                parts = dir_name.split('_')
+                if len(parts) >= 2:
+                    timestamps.add(parts[-1])
+            
+            if not timestamps:
+                self.logger.info("No valid model timestamps found")
+                return None, None, None
+            
+            latest_timestamp = max(timestamps)
+            
+            # Construct model paths
+            model1_path = f"{base_path}/model1_{latest_timestamp}"
+            model2_path = f"{base_path}/model2_{latest_timestamp}"
+            model3_path = f"{base_path}/model3_{latest_timestamp}"
+            
+            # Check if all model paths exist
+            model1_exists = fs.exists(self.spark._jvm.org.apache.hadoop.fs.Path(model1_path))
+            model2_exists = fs.exists(self.spark._jvm.org.apache.hadoop.fs.Path(model2_path))
+            model3_exists = fs.exists(self.spark._jvm.org.apache.hadoop.fs.Path(model3_path))
+            
+            if not (model1_exists and model2_exists and model3_exists):
+                self.logger.warning("Not all model versions found for latest timestamp")
+                return None, None, None
+            
+            # Load models
+            from pyspark.ml import PipelineModel
+            self.model1 = PipelineModel.load(model1_path)
+            self.model2 = PipelineModel.load(model2_path)
+            self.model3 = PipelineModel.load(model3_path)
+            self.model_version = latest_timestamp
+            
+            self.logger.info(f"Successfully loaded models version {latest_timestamp}")
+            return self.model1, self.model2, self.model3
+            
+        except Exception as e:
+            self.logger.error(f"Error loading models: {str(e)}")
+            return None, None, None
+
+    def preprocess_dataset1(self, df):
+        """Preprocess dataset1"""
+        # Rename isFraud to fraud to match other datasets
+        return df.withColumn(
+            "amount_to_balance_ratio",
+            when(col("oldbalanceOrg") > 0, col("amount") / col("oldbalanceOrg")).otherwise(0)
+        ).withColumnRenamed("isFraud", "fraud")
+
+    def preprocess_dataset2(self, df):
+        """Preprocess dataset2"""
+        return df
+
+    def preprocess_dataset3(self, df):
+        """Preprocess dataset3"""
+        return df
+
+    def save_prediction_to_cassandra(self, prediction_data):
+        """Save prediction results to Cassandra"""
+        try:
+            if self.cassandra_session is not None:
+
+
+                # Generate a unique transaction ID if not present
+                transaction_id = prediction_data.get('transaction_id', str(uuid.uuid4()))
+
+                # Calculate ensemble probability (average of all models)
+                probabilities = [
+                    prediction_data.get('model1_fraud_probability', 0.0),
+                    prediction_data.get('model2_fraud_probability', 0.0),
+                    prediction_data.get('model3_fraud_probability', 0.0)
+                ]
+                ensemble_probability = np.mean(probabilities)
+
+                
+                self.cassandra_session.execute("""
+                    INSERT INTO real_time_predictions (
+                        transaction_id,
+                        prediction_timestamp,
+                        transaction_type,
+                        amount,
+                        customer_id,
+                        model1_fraud_probability,
+                        model2_fraud_probability,
+                        model3_fraud_probability,
+                        ensemble_fraud_probability,
+                        is_fraud,
+                        model_version
+                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                """, (
+                    transaction_id,
+                    datetime.now(),
+                    prediction_data.get('type', 'unknown'),
+                    float(prediction_data.get('amount', 0.0)),
+                    prediction_data.get('customer_id', 'unknown'),
+                    float(prediction_data.get('model1_fraud_probability', 0.0)),
+                    float(prediction_data.get('model2_fraud_probability', 0.0)),
+                    float(prediction_data.get('model3_fraud_probability', 0.0)),
+                    float(ensemble_probability),
+                    ensemble_probability > 0.5,
+                    self.model_version
+                ))
+                self.logger.info(f"Saved prediction for transaction {transaction_id} to Cassandra")
+        except Exception as e:
+            self.logger.error(f"Error saving prediction to Cassandra: {str(e)}")
 
     def send_processed_message(self, result):
         """Send processed result to output topic"""
@@ -214,7 +427,7 @@ class FraudDetectionPipeline:
                 {
                     'transaction_id': result.transaction_id,
                     'prediction': float(result.prediction),
-                    'probability': float(result.probability[1]),  # Probability of fraud
+                    'probability': float(result.fraud_probability),  # Probability of fraud
                     'timestamp': datetime.now().isoformat(),
                     'amount': float(result.amount)
                 }
@@ -224,241 +437,215 @@ class FraudDetectionPipeline:
         except Exception as e:
             self.logger.error(f"Error sending processed message: {e}")
 
-    def preprocess_dataset1(self, df):
-        """Preprocess dataset1 specific features"""
-        try:
-            type_indexer = StringIndexer(inputCol="type", outputCol="type_index")
-            
-            df = df.withColumn("amount_to_balance_ratio", 
-                              when(col("oldbalanceOrg") > 0, 
-                                   col("amount") / col("oldbalanceOrg")).otherwise(0))
-            
-            return df, [type_indexer]
-        except Exception as e:
-            self.logger.error(f"Error preprocessing dataset1: {e}")
-            raise
-
-    def preprocess_dataset2(self, df):
-        """Preprocess dataset2 specific features"""
-        return df, []
-
-    def preprocess_dataset3(self, df):
-        """Preprocess dataset3 specific features"""
-        try:
-            entry_mode_indexer = StringIndexer(inputCol="entry_mode", outputCol="entry_mode_index")
-            df = df.withColumn("post_ts", to_timestamp(col("post_ts"), self.timestamp_format))
-            df = df.withColumn("hour", hour(col("post_ts")))
-            return df, [entry_mode_indexer]
-        except Exception as e:
-            self.logger.error(f"Error preprocessing dataset3: {e}")
-            raise
-
-    def create_feature_vector(self, df1, df2, df3):
-        """Combine features from all datasets and create final feature vector"""
-        features1 = ["amount", "amount_to_balance_ratio", "type_index"]
-        features2 = ["distance_from_home", "distance_from_last_transaction", 
-                    "ratio_to_median_purchase_price", "used_chip", "used_pin_number"]
-        features3 = ["amt", "entry_mode_index", "hour"]
-        
-        assembler = VectorAssembler(
-            inputCols=features1 + features2 + features3,
-            outputCol="features",
-            handleInvalid="keep"
-        )
-        
-        return assembler
-
-    def train_model(self, training_data1: List[Dict], training_data2: List[Dict], 
-                   training_data3: List[Dict]):
-        """Train the Random Forest model"""
-        try:
-            # Convert training data to DataFrames
-            train_data1_modified = [{**d, 'fraud': d.get('isFraud')} for d in training_data1]
-            train_df1 = self.spark.createDataFrame(train_data1_modified, self.schema1)
-            train_df2 = self.spark.createDataFrame(training_data2, self.schema2)
-            train_df3 = self.spark.createDataFrame(training_data3, self.schema3)
-            
-            # Preprocess each dataset
-            train_df1, transformers1 = self.preprocess_dataset1(train_df1)
-            train_df2, transformers2 = self.preprocess_dataset2(train_df2)
-            train_df3, transformers3 = self.preprocess_dataset3(train_df3)
-            
-            # Create feature vector
-            assembler = self.create_feature_vector(train_df1, train_df2, train_df3)
-            
-            # Initialize Random Forest Classifier
-            rf = RandomForestClassifier(
-                labelCol="fraud",
-                featuresCol="features",
-                numTrees=100,
-                maxDepth=10,
-                seed=42
-            )
-            
-            # Create and train pipeline
-            pipeline = Pipeline(stages=transformers1 + transformers2 + transformers3 + [assembler, rf])
-            train_df = train_df1.join(train_df2, ["fraud"]).join(train_df3, ["fraud"])
-            
-            if (train_df.count() < 2):
-                self.logger.error("Not enough data for training")
-                return
-            self.model = pipeline.fit(train_df)
-            
-            # Save model to HDFS
-            model_path = self.save_model_to_hdfs(self.model)
-            self.logger.info(f"Model training completed and saved to {model_path}")
-            
-            # Calculate training metrics
-            predictions = self.model.transform(
-                train_df1.join(train_df2, ["fraud"]).join(train_df3, ["fraud"])
-            )
-            evaluator = BinaryClassificationEvaluator(labelCol="fraud")
-            auc_roc = evaluator.evaluate(predictions)
-            self.logger.info(f"Training AUC-ROC: {auc_roc}")
-            
-        except Exception as e:
-            self.logger.error(f"Error training model: {e}")
-            raise
-
-    def save_prediction_to_cassandra(self, prediction_data):
-        """Save prediction results to Cassandra"""
-        try:
-            if self.cassandra_session is not None:
-                # Generate a unique transaction ID if not present
-                transaction_id = prediction_data.get('transaction_id', str(uuid.uuid4()))
-                
-                self.cassandra_session.execute("""
-                    INSERT INTO real_time_predictions (
-                        transaction_id,
-                        prediction_timestamp,
-                        transaction_type,
-                        amount,
-                        customer_id,
-                        fraud_probability,
-                        is_fraud,
-                        model_version
-                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-                """, (
-                    transaction_id,
-                    datetime.now(),
-                    prediction_data.get('type', 'unknown'),
-                    float(prediction_data.get('amount', 0.0)),
-                    prediction_data.get('customer_id', 'unknown'),
-                    float(prediction_data.get('fraud_probability', 0.0)),
-                    prediction_data.get('fraud_probability', 0.0) > 0.5,
-                    self.model_version
-                ))
-                self.logger.info(f"Saved prediction for transaction {transaction_id} to Cassandra")
-        except Exception as e:
-            self.logger.error(f"Error saving prediction to Cassandra: {str(e)}")
-
     def process_messages(self):
         """Process messages from all Kafka topics"""
         messages = {topic: None for topic in config.kafka_topics}
-        
         try:
-            for topic, consumer in self.consumers.items():
-                messages[topic] = next(consumer)
+            # Get messages from all topics
+            for consumer in self.consumers.values():
+                message = next(consumer)
+                messages[message.topic] = message
             
             if all(messages.values()):
-                # Modify dataset1 message to use 'fraud' instead of 'isFraud'
                 message1 = messages['dataset1'].value
-                message1['fraud'] = message1.pop('isFraud') if 'isFraud' in message1 else 0
+                message2 = messages['dataset2'].value
+                message3 = messages['dataset3'].value
                 
-                # Convert messages to DataFrames
+                # Create DataFrames
                 df1 = self.spark.createDataFrame([message1], self.schema1)
-                df2 = self.spark.createDataFrame([messages['dataset2'].value], self.schema2)
-                df3 = self.spark.createDataFrame([messages['dataset3'].value], self.schema3)
+                df2 = self.spark.createDataFrame([message2], self.schema2)
+                df3 = self.spark.createDataFrame([message3], self.schema3)
                 
-                # Make prediction
-                if self.model:
-                    # Preprocess and combine data
-                    combined_df = df1.join(df2, ["fraud"]).join(df3, ["fraud"])
-                    prediction = self.model.transform(combined_df)
+                # Preprocess the data
+                df1_processed = self.preprocess_dataset1(df1)
+                df2_processed = self.preprocess_dataset2(df2)
+                df3_processed = self.preprocess_dataset3(df3)
+
+                # Create feature vectors for each model
+                test_data1 = self.create_feature_vector1(df1_processed)
+                test_data2 = self.create_feature_vector2(df2_processed)
+                test_data3 = self.create_feature_vector3(df3_processed)
+                
+                # Make predictions
+                if self.model1 and self.model2 and self.model3:
+                    get_fraud_prob = udf(lambda v: float(v.values[1]), DoubleType())
                     
-                    # Extract prediction result
-                    result = prediction.select(
-                        "transaction_id", "amount", "fraud", "prediction", 
-                        "probability"
-                    ).collect()[0]
+                    prediction1 = self.model1.transform(test_data1)
+                    prediction1 = prediction1.select(
+                        "transaction_id", "type", "amount", "nameOrig", "nameDest",
+                        "fraud", "prediction", get_fraud_prob("probability").alias("fraud_probability")
+                    )
+                    
+                    prediction2 = self.model2.transform(test_data2)
+                    prediction2 = prediction2.select(
+                        "fraud", "prediction", get_fraud_prob("probability").alias("fraud_probability")
+                    )
+                    
+                    prediction3 = self.model3.transform(test_data3)
+                    prediction3 = prediction3.select(
+                        "fraud", "prediction", get_fraud_prob("probability").alias("fraud_probability"),
+                        "customer_id", "transaction_id"
+                    )
+                    
+                    # Extract prediction results
+                    result1 = prediction1.collect()[0]
+                    result2 = prediction2.collect()[0]
+                    result3 = prediction3.collect()[0]
+                    
+                    # Calculate ensemble probability (average of all models)
+                    ensemble_probability = (
+                        float(result1.fraud_probability) + 
+                        float(result2.fraud_probability) + 
+                        float(result3.fraud_probability)
+                    ) / 3.0
                     
                     # Save prediction to Cassandra
                     prediction_data = {
-                        'transaction_id': result.transaction_id,
-                        'type': result.type,
-                        'amount': result.amount,
-                        'customer_id': result.customer_id,
-                        'fraud_probability': result.probability[1]
+                        'transaction_id': result1.transaction_id,
+                        'type': result1.type,
+                        'amount': float(result1.amount),
+                        'customer_id': result3.customer_id,
+                        'model1_fraud_probability': float(result1.fraud_probability),
+                        'model2_fraud_probability': float(result2.fraud_probability),
+                        'model3_fraud_probability': float(result3.fraud_probability),
+                        'ensemble_fraud_probability': float(ensemble_probability),
+                        'prediction_timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                     }
+                    
                     self.save_prediction_to_cassandra(prediction_data)
                     
-                    # Send processed result to output topic
-                    self.send_processed_message(result)
+                    # Send processed result to Kafka
+                    self.send_processed_message(result1)
                     
-                    self.logger.info(f"Processed transaction: {result.transaction_id}")
-                    return result
+                    self.logger.info(f"Processed transaction: {result1.transaction_id}")
+                    return result1
                 else:
-                    self.logger.warning("Model not trained yet")
+                    self.logger.warning("Models not trained yet")
                     return None
                     
         except Exception as e:
             self.logger.error(f"Error processing messages: {e}")
-            return None
+            raise
 
     def run(self):
         """Main processing loop"""
         self.logger.info("Starting Fraud Detection Pipeline...")
         
         try:
-            # Example training data (you would normally load this from a file or database)
+            # Generate training data
             training_data1 = [
                 {
                     "step": 1,
                     "type": "TRANSFER",
-                    "amount": 5000.00,
-                    "isFlaggedFraud": 0,
+                    "amount": 9999.99,
+                    "nameOrig": "C123456789",
+                    "oldbalanceOrg": 10000.00,
+                    "newbalanceOrg": 0.01,
+                    "nameDest": "M789012345",
+                    "oldbalanceDest": 150.00,
+                    "newbalanceDest": 10149.99,
                     "isFraud": 1,
-                    "nameDest": "C12345678",
-                    "nameOrig": "A98765432",
-                    "newbalanceDest": 10000.00,
-                    "newbalanceOrig": 0.00,
-                    "oldbalanceDest": 5000.00,
-                    "oldbalanceOrg": 5000.00
+                    "isFlaggedFraud": 1
                 },
-                # Add more training examples
+                {
+                    "step": 2,
+                    "type": "PAYMENT",
+                    "amount": 250.00,
+                    "nameOrig": "C987654321",
+                    "oldbalanceOrg": 2500.00,
+                    "newbalanceOrg": 2250.00,
+                    "nameDest": "M543210987",
+                    "oldbalanceDest": 5000.00,
+                    "newbalanceDest": 5250.00,
+                    "isFraud": 0,
+                    "isFlaggedFraud": 0
+                },
+                {
+                    "step": 3,
+                    "type": "CASH_OUT",
+                    "amount": 15000.00,
+                    "nameOrig": "C111222333",
+                    "oldbalanceOrg": 15100.00,
+                    "newbalanceOrg": 100.00,
+                    "nameDest": "M444555666",
+                    "oldbalanceDest": 0.00,
+                    "newbalanceDest": 15000.00,
+                    "isFraud": 1,
+                    "isFlaggedFraud": 1
+                }
             ]
             
             training_data2 = [
                 {
-                    "distance_from_home": 2.5,
-                    "distance_from_last_transaction": 1.2,
-                    "fraud": 0,
+                    "distance_from_home": 1500.5,
+                    "distance_from_last_transaction": 1489.2,
+                    "ratio_to_median_purchase_price": 10.5,
+                    "repeat_retailer": 0,
+                    "used_chip": 0,
+                    "used_pin_number": 0,
                     "online_order": 1,
-                    "ratio_to_median_purchase_price": 0.8,
+                    "fraud": 1
+                },
+                {
+                    "distance_from_home": 3.2,
+                    "distance_from_last_transaction": 0.5,
+                    "ratio_to_median_purchase_price": 1.2,
                     "repeat_retailer": 1,
                     "used_chip": 1,
-                    "used_pin_number": 1
+                    "used_pin_number": 1,
+                    "online_order": 0,
+                    "fraud": 0
                 },
-                # Add more training examples
+                {
+                    "distance_from_home": 2500.0,
+                    "distance_from_last_transaction": 2489.8,
+                    "ratio_to_median_purchase_price": 15.8,
+                    "repeat_retailer": 0,
+                    "used_chip": 0,
+                    "used_pin_number": 0,
+                    "online_order": 1,
+                    "fraud": 1
+                }
             ]
             
             training_data3 = [
                 {
-                    "amt": 120.50,
+                    "amt": 9999.99,
                     "bin": 123456,
-                    "customer_id": "CUST0001",
+                    "customer_id": "CUST001",
+                    "entry_mode": "ONLINE",
+                    "fraud": 1,
+                    "fraud_scenario": 1,
+                    "post_ts": "2025-01-04T14:30:00Z",
+                    "terminal_id": "TERM001",
+                    "transaction_id": "TX001"
+                },
+                {
+                    "amt": 250.00,
+                    "bin": 789012,
+                    "customer_id": "CUST002",
                     "entry_mode": "CHIP",
                     "fraud": 0,
                     "fraud_scenario": 0,
-                    "post_ts": "2024-12-07T12:00:00Z",
-                    "terminal_id": "TERM001",
-                    "transaction_id": "TXN0001"
+                    "post_ts": "2025-01-04T14:35:00Z",
+                    "terminal_id": "TERM002",
+                    "transaction_id": "TX002"
                 },
-                # Add more training examples
+                {
+                    "amt": 15000.00,
+                    "bin": 345678,
+                    "customer_id": "CUST003",
+                    "entry_mode": "ONLINE",
+                    "fraud": 1,
+                    "fraud_scenario": 2,
+                    "post_ts": "2025-01-04T14:40:00Z",
+                    "terminal_id": "TERM003",
+                    "transaction_id": "TX003"
+                }
             ]
             
-            # Train the model
-            self.train_model(training_data1, training_data2, training_data3)
+            # Train the models
+            self.train_models(training_data1, training_data2, training_data3)
             
             # Process streaming data
             while True:

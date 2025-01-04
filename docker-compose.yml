@@ -81,6 +81,7 @@ services:
       - ./services/hadoop/config/core-site.xml:/opt/bitnami/spark/conf/core-site.xml
       - ./services/hadoop/config/hdfs-site.xml:/opt/bitnami/spark/conf/hdfs-site.xml
       - ./services/spark/hive-site.xml:/opt/bitnami/spark/conf/hive-site.xml
+      - ./services/spark/setup:/docker-entrypoint-initdb.d
     networks:
       custom_net:
         ipv4_address: 192.168.1.109
@@ -102,6 +103,7 @@ services:
       - ./services/hadoop/config/core-site.xml:/opt/bitnami/spark/conf/core-site.xml
       - ./services/hadoop/config/hdfs-site.xml:/opt/bitnami/spark/conf/hdfs-site.xml
       - ./services/spark/hive-site.xml:/opt/bitnami/spark/conf/hive-site.xml
+      - ./services/spark/setup:/docker-entrypoint-initdb.d
     networks:
       custom_net:
         ipv4_address: 192.168.1.110

@@ -34,14 +34,17 @@ CREATE TABLE IF NOT EXISTS high_risk_customers (
     PRIMARY KEY (customer_id)
 );
 
--- Table for real-time fraud predictions
+-- Table for real-time predictions from multiple models
 CREATE TABLE IF NOT EXISTS real_time_predictions (
     transaction_id text,
     prediction_timestamp timestamp,
     transaction_type text,
-    amount double,
+    amount float,
     customer_id text,
-    fraud_probability double,
+    model1_fraud_probability float,
+    model2_fraud_probability float,
+    model3_fraud_probability float,
+    ensemble_fraud_probability float,
     is_fraud boolean,
     model_version text,
     PRIMARY KEY (transaction_id)
