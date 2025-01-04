@@ -100,30 +100,30 @@ class FraudDetectionPipeline:
             StructField("step", IntegerType()),
             StructField("type", StringType()),
             StructField("amount", DoubleType()),
-            StructField("isFlaggedFraud", IntegerType()),
-            StructField("fraud", IntegerType()),
-            StructField("nameDest", StringType()),
             StructField("nameOrig", StringType()),
-            StructField("newbalanceDest", DoubleType()),
+            StructField("oldbalanceOrg", DoubleType()),
             StructField("newbalanceOrig", DoubleType()),
+            StructField("nameDest", StringType()),
             StructField("oldbalanceDest", DoubleType()),
-            StructField("oldbalanceOrg", DoubleType())
+            StructField("newbalanceDest", DoubleType()),
+            StructField("isFraud", IntegerType()),
+            StructField("isFlaggedFraud", IntegerType())
         ])
 
         self.schema2 = StructType([
             StructField("distance_from_home", DoubleType()),
             StructField("distance_from_last_transaction", DoubleType()),
             StructField("fraud", IntegerType()),
-            StructField("online_order", IntegerType()),
             StructField("ratio_to_median_purchase_price", DoubleType()),
             StructField("repeat_retailer", IntegerType()),
             StructField("used_chip", IntegerType()),
-            StructField("used_pin_number", IntegerType())
+            StructField("used_pin_number", IntegerType()),
+            StructField("online_order", IntegerType())
         ])
 
         self.schema3 = StructType([
             StructField("amt", DoubleType()),
-            StructField("bin", StringType()),
+            StructField("bin", IntegerType()),
             StructField("customer_id", StringType()),
             StructField("entry_mode", StringType()),
             StructField("fraud", IntegerType()),
