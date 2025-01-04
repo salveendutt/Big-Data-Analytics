@@ -1,4 +1,7 @@
-CREATE EXTERNAL TABLE dataset1 (
+create database if not exists fraud;
+use fraud;
+
+CREATE EXTERNAL TABLE if not exists dataset1 (
     step INT,
     type STRING,
     amount DOUBLE,
@@ -16,7 +19,7 @@ STORED AS PARQUET
 LOCATION '/user/hive/warehouse/dataset1';
 
 
-CREATE EXTERNAL TABLE dataset2 (
+CREATE EXTERNAL TABLE if not exists dataset2 (
     distance_from_home DOUBLE,
     distance_from_last_transaction DOUBLE,
     fraud INT,
@@ -31,7 +34,7 @@ STORED AS PARQUET
 LOCATION '/user/hive/warehouse/dataset2';
 
 
-CREATE EXTERNAL TABLE dataset3 (
+CREATE EXTERNAL TABLE if not exists dataset3 (
     amt DOUBLE,
     bin STRING,
     customer_id STRING,

@@ -208,7 +208,7 @@ services:
     image: bde2020/hive:2.3.2-postgresql-metastore
     container_name: hive-server
     volumes:
-      - ./services/hive/tables:/opt/hive/tables
+      - ./services/hive/tables:/docker-entrypoint-initdb.d
       - ./services/hadoop/config/core-site.xml:/etc/hadoop/core-site.xml
       - ./services/hadoop/config/hdfs-site.xml:/etc/hadoop/hdfs-site.xml
     env_file:
