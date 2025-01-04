@@ -1,27 +1,5 @@
 services:
 
-
-  # nifi:
-  #   image: apache/nifi:latest
-  #   container_name: nifi
-  #   ports:
-  #     - "8443:8443"
-  #   environment:
-  #     NIFI_WEB_HTTPS_PORT: 8443
-  #   depends_on:
-  #     - cassandra
-  #     - zookeeper
-  #     - streaming_simulation
-  #     - kafka
-  #   networks:
-  #     custom_net:
-  #       ipv4_address: 192.168.1.102
-  #   volumes:
-  #     - ./services/nifi-2-0/conf:/opt/nifi/nifi-current/conf
-  #     - ./services/nifi-2-0/nar_extensions:/opt/nifi/nifi-current/nar_extensions
-  #     - ./services/nifi-2-0/extensions:/opt/nifi/nifi-current/extensions
-
-
   nifi:
     image: apache/nifi:1.28.1
     container_name: nifi
@@ -29,16 +7,21 @@ services:
       - "8443:8443"
     environment:
       NIFI_WEB_HTTPS_PORT: 8443
+      # NIFI_CLUSTER_IS_NODE: 'false'
+      # NIFI_ELECTION_MAX_WAIT: '1 min'
     depends_on:
-      - cassandra
-      - zookeeper
+      # - cassandra
+      # - zookeeper
       - streaming_simulation
-      - kafka
+      # - kafka
+      - namenode
+      - datanode
     networks:
       custom_net:
         ipv4_address: 192.168.1.102
     volumes:
       - ./services/nifi/conf:/opt/nifi/nifi-current/conf
+      - ./services/hadoop/config:/opt/hadoop/conf
     #   - ./services/nifi/nar_extensions:/opt/nifi/nifi-current/nar_extensions
     #   - ./services/nifi/extensions:/opt/nifi/nifi-current/extensions
     
@@ -63,7 +46,7 @@ services:
       - "5002:5002"
     depends_on:
       - cassandra
-      - nifi
+
     restart: unless-stopped
 
   streaming_processing:
@@ -79,20 +62,33 @@ services:
       - nifi
       - spark-master
 
-
-
   spark-master:
     image: bitnami/spark:3.5.3
     container_name: spark-master
     environment:
       SPARK_MODE: master
       SPARK_MASTER_HOST: spark-master
+      SPARK_LOCAL_IP: spark-master
+      SPARK_MASTER_PORT: 7077
+      SPARK_CONF_DIR: /opt/bitnami/spark/conf
+      SPARK_DRIVER_MEMORY: "1g"
+      SPARK_EXECUTOR_MEMORY: "1g"
+      SPARK_CONF_spark_hive_metastore_uris: thrift://hive-metastore:9083
     ports:
       - "7077:7077" 
       - "8080:8080"
+    volumes:
+      - ./services/hadoop/config/core-site.xml:/opt/bitnami/spark/conf/core-site.xml
+      - ./services/hadoop/config/hdfs-site.xml:/opt/bitnami/spark/conf/hdfs-site.xml
+      - ./services/spark/hive-site.xml:/opt/bitnami/spark/conf/hive-site.xml
+      - ./services/spark/setup:/docker-entrypoint-initdb.d
     networks:
       custom_net:
         ipv4_address: 192.168.1.109
+    depends_on:
+      - namenode
+      - hive-metastore
+      - zookeeper
 
   spark-worker:
     image: bitnami/spark:3.5.3
@@ -100,13 +96,19 @@ services:
     environment:
       SPARK_MODE: worker
       SPARK_MASTER_URL: spark://spark-master:7077
-      SPARK_WORKER_MEMORY: 2G
-      SPARK_WORKER_CORES: 2
-    depends_on:
-      - spark-master
+      SPARK_WORKER_MEMORY: "1g"
+      SPARK_WORKER_CORES: "1"
+      SPARK_LOCAL_IP: spark-worker
+    volumes:
+      - ./services/hadoop/config/core-site.xml:/opt/bitnami/spark/conf/core-site.xml
+      - ./services/hadoop/config/hdfs-site.xml:/opt/bitnami/spark/conf/hdfs-site.xml
+      - ./services/spark/hive-site.xml:/opt/bitnami/spark/conf/hive-site.xml
+      - ./services/spark/setup:/docker-entrypoint-initdb.d
     networks:
       custom_net:
         ipv4_address: 192.168.1.110
+    depends_on:
+      - spark-master
 
   cassandra:
     image: bitnami/cassandra:5.0.2
@@ -142,12 +144,13 @@ services:
       custom_net:
         ipv4_address: 192.168.1.105
 
-
   zookeeper:
-    image: zookeeper:3.9.3
+    image: bitnami/zookeeper:3.8.1
     container_name: zookeeper
     ports:
       - "2181:2181"
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
     networks:
       custom_net:
         ipv4_address: 192.168.1.104
@@ -157,13 +160,108 @@ services:
     container_name: kafdrop
     environment:
       KAFKA_BROKERCONNECT: kafka:9092
+      SERVER_PORT: 9001
     ports:
-      - "9000:9000"
+      - "9001:9001"
     networks:
       custom_net:
         ipv4_address: 192.168.1.106
     depends_on:
       - kafka
+
+  namenode:
+    image: bde2020/hadoop-namenode:2.0.0-hadoop2.7.4-java8
+    container_name: namenode
+    volumes:
+      - hadoop_namenode:/hadoop/dfs/name
+      - ./services/hadoop/config/core-site.xml:/etc/hadoop/core-site.xml
+      - ./services/hadoop/config/hdfs-site.xml:/etc/hadoop/hdfs-site.xml
+    environment:
+      - CLUSTER_NAME=hive
+    env_file:
+      - ./services/hive/hadoop-hive.env
+    ports:
+      - "50070:50070"
+      - "8020:8020"
+    networks:
+      custom_net:
+        ipv4_address: 192.168.1.115
+
+  datanode:
+    image: bde2020/hadoop-datanode:2.0.0-hadoop2.7.4-java8
+    container_name: datanode
+    volumes:
+      - hadoop_datanode:/hadoop/dfs/data
+      - ./services/hadoop/config/core-site.xml:/etc/hadoop/core-site.xml
+      - ./services/hadoop/config/hdfs-site.xml:/etc/hadoop/hdfs-site.xml
+    env_file:
+      - ./services/hive/hadoop-hive.env
+    environment:
+      SERVICE_PRECONDITION: "namenode:50070"
+    depends_on:
+      - namenode
+    ports:
+      - "50075:50075"
+    networks:
+      custom_net:
+        ipv4_address: 192.168.1.116
+
+  hive-server:
+    image: bde2020/hive:2.3.2-postgresql-metastore
+    container_name: hive-server
+    volumes:
+      - ./services/hive/tables:/docker-entrypoint-initdb.d
+      - ./services/hadoop/config/core-site.xml:/etc/hadoop/core-site.xml
+      - ./services/hadoop/config/hdfs-site.xml:/etc/hadoop/hdfs-site.xml
+    env_file:
+      - ./services/hive/hadoop-hive.env
+    environment:
+      HIVE_CORE_CONF_javax_jdo_option_ConnectionURL: "jdbc:postgresql://hive-metastore/metastore"
+      SERVICE_PRECONDITION: "hive-metastore:9083"
+      HIVE_SITE_CONF_hive_zookeeper_quorum: "zookeeper:2181"
+    depends_on:
+      - hive-metastore
+      - namenode
+      - zookeeper
+    networks:
+      custom_net:
+        ipv4_address: 192.168.1.117
+    ports:
+      - "10000:10000"
+
+  hive-metastore:
+    image: bde2020/hive:2.3.2-postgresql-metastore
+    container_name: hive-metastore
+    volumes:
+      - ./services/hadoop/config/core-site.xml:/etc/hadoop/core-site.xml
+      - ./services/hadoop/config/hdfs-site.xml:/etc/hadoop/hdfs-site.xml
+    env_file:
+      - ./services/hive/hadoop-hive.env
+    environment:
+      SERVICE_PRECONDITION: "namenode:50070 datanode:50075 hive-metastore-postgresql:5432 zookeeper:2181"
+      HIVE_SITE_CONF_hive_zookeeper_quorum: "zookeeper:2181"
+    command: /opt/hive/bin/hive --service metastore
+    depends_on:
+      - hive-metastore-postgresql
+      - namenode
+      - datanode
+      - zookeeper
+    networks:
+      custom_net:
+        ipv4_address: 192.168.1.118
+    ports:
+      - "9083:9083"
+
+  hive-metastore-postgresql:
+    image: bde2020/hive-metastore-postgresql:2.3.0
+    container_name: hive-metastore-postgresql
+    volumes:
+      - hive_postgresql_data:/var/lib/postgresql/data
+    networks:
+      custom_net:
+        ipv4_address: 192.168.1.119
+    depends_on:
+      - datanode
 
 networks:
   custom_net:
@@ -171,3 +269,8 @@ networks:
     ipam:
       config:
         - subnet: 192.168.1.0/24
+
+volumes:
+  hadoop_namenode:
+  hadoop_datanode:
+  hive_postgresql_data:
