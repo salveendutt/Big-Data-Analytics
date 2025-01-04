@@ -1,9 +1,13 @@
 import time
+import logging
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import count, avg, sum, col, when, desc, hour, dayofweek, month, year
 from cassandra.cluster import Cluster
 from cassandra.auth import PlainTextAuthProvider
 from pyspark.sql.types import StructType, StructField, StringType, FloatType, IntegerType
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 def create_spark_session():
     """Create a Spark session with Hive support"""
@@ -22,7 +26,7 @@ def create_cassandra_session():
         session.set_keyspace('fraud_analytics')
         return session
     except Exception as e:
-        print(f"Error connecting to Cassandra: {str(e)}")
+        logger.error(f"Error connecting to Cassandra: {str(e)}")
         return None
 
 def query_hive(spark, table_name):
@@ -30,7 +34,7 @@ def query_hive(spark, table_name):
     try:
         return spark.sql(f"SELECT * FROM fraud.{table_name}")
     except Exception as e:
-        print(f"Error querying table {table_name}: {str(e)}")
+        logger.error(f"Error querying table {table_name}: {str(e)}")
         return None
 
 def create_and_save_views(spark, cassandra_session):
@@ -105,7 +109,7 @@ def create_and_save_views(spark, cassandra_session):
                 )
                 
     except Exception as e:
-        print(f"Error creating views: {str(e)}")
+        logger.error(f"Error creating views: {str(e)}")
 
 if __name__ == "__main__":
     # Create Spark session
@@ -120,7 +124,7 @@ if __name__ == "__main__":
             
             # Create and save views
             create_and_save_views(spark, cassandra_session)
-            print("Successfully updated views in Cassandra")
+            logger.info("Successfully updated views in Cassandra")
             
             # Close Cassandra connection
             cassandra_session.shutdown()
@@ -129,5 +133,5 @@ if __name__ == "__main__":
             time.sleep(300)
             
         except Exception as e:
-            print(f"Error in batch processing: {str(e)}")
+            logger.error(f"Error in batch processing: {str(e)}")
             time.sleep(60)  # Wait a minute before retrying on error

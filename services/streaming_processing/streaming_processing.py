@@ -445,7 +445,7 @@ class FraudDetectionPipeline:
             training_data3 = [
                 {
                     "amt": 120.50,
-                    "bin": "123456",
+                    "bin": 123456,
                     "customer_id": "CUST0001",
                     "entry_mode": "CHIP",
                     "fraud": 0,
