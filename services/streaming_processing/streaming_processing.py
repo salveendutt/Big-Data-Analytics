@@ -7,6 +7,8 @@ from pyspark.ml.feature import VectorAssembler, StringIndexer
 from pyspark.ml.classification import RandomForestClassifier
 from pyspark.ml.evaluation import BinaryClassificationEvaluator
 from kafka import KafkaConsumer, KafkaProducer
+from cassandra.cluster import Cluster
+from cassandra.auth import PlainTextAuthProvider
 import json
 import os
 from typing import Dict, List
@@ -15,6 +17,7 @@ import config_streaming_processing as config
 import logging
 from kafka.errors import NoBrokersAvailable
 import numpy
+import uuid
 
 
 class FraudDetectionPipeline:
@@ -37,7 +40,11 @@ class FraudDetectionPipeline:
         self.consumers = self._initialize_kafka_consumers()
         self.producer = self._initialize_kafka_producer()
         
+        # Initialize Cassandra connection
+        self.cassandra_session = self._initialize_cassandra()
+        
         self.model = None
+        self.model_version = "1.0.0"  # Track model version for predictions
 
     def _initialize_spark(self):
         """Initialize Spark session with retry logic"""
@@ -93,6 +100,17 @@ class FraudDetectionPipeline:
                 else:
                     self.logger.error("Failed to connect to Kafka producer after all attempts")
                     raise
+
+    def _initialize_cassandra(self):
+        """Initialize connection to Cassandra"""
+        try:
+            cluster = Cluster(['cassandra'], auth_provider=PlainTextAuthProvider(username='cassandra', password='cassandra'))
+            session = cluster.connect()
+            session.set_keyspace('fraud_analytics')
+            return session
+        except Exception as e:
+            self.logger.error(f"Error connecting to Cassandra: {str(e)}")
+            return None
 
     def _initialize_schemas(self):
         """Initialize schemas for each dataset"""
@@ -243,6 +261,38 @@ class FraudDetectionPipeline:
             self.logger.error(f"Error training model: {e}")
             raise
 
+    def save_prediction_to_cassandra(self, prediction_data):
+        """Save prediction results to Cassandra"""
+        try:
+            if self.cassandra_session is not None:
+                # Generate a unique transaction ID if not present
+                transaction_id = prediction_data.get('transaction_id', str(uuid.uuid4()))
+                
+                self.cassandra_session.execute("""
+                    INSERT INTO real_time_predictions (
+                        transaction_id,
+                        prediction_timestamp,
+                        transaction_type,
+                        amount,
+                        customer_id,
+                        fraud_probability,
+                        is_fraud,
+                        model_version
+                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                """, (
+                    transaction_id,
+                    datetime.now(),
+                    prediction_data.get('type', 'unknown'),
+                    float(prediction_data.get('amount', 0.0)),
+                    prediction_data.get('customer_id', 'unknown'),
+                    float(prediction_data.get('fraud_probability', 0.0)),
+                    prediction_data.get('fraud_probability', 0.0) > 0.5,
+                    self.model_version
+                ))
+                self.logger.info(f"Saved prediction for transaction {transaction_id} to Cassandra")
+        except Exception as e:
+            self.logger.error(f"Error saving prediction to Cassandra: {str(e)}")
+
     def process_messages(self):
         """Process messages from all Kafka topics"""
         messages = {topic: None for topic in config.kafka_topics}
@@ -272,6 +322,16 @@ class FraudDetectionPipeline:
                         "transaction_id", "amount", "fraud", "prediction", 
                         "probability"
                     ).collect()[0]
+                    
+                    # Save prediction to Cassandra
+                    prediction_data = {
+                        'transaction_id': result.transaction_id,
+                        'type': result.type,
+                        'amount': result.amount,
+                        'customer_id': result.customer_id,
+                        'fraud_probability': result.probability[1]
+                    }
+                    self.save_prediction_to_cassandra(prediction_data)
                     
                     # Send processed result to output topic
                     self.send_processed_message(result)
