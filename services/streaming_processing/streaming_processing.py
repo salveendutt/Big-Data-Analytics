@@ -43,14 +43,16 @@ class FraudDetectionPipeline:
         # Initialize Cassandra connection
         self.cassandra_session = self._initialize_cassandra()
         
-        self.model = None
-        self.model_version = "1.0.0"  # Track model version for predictions
+        # Try to load existing model or set to None
+        self.model = self.load_latest_model_from_hdfs()
+        self.model_version = "latest" if self.model else "1.0.0"
 
     def _initialize_spark(self):
         """Initialize Spark session with retry logic"""
         try:
             return SparkSession.builder \
                 .master(config.spark_master_address) \
+                .config("spark.sql.warehouse.dir", "/user/hive/warehouse") \
                 .config("spark.sql.streaming.checkpointLocation", "/tmp/checkpoint") \
                 .config("spark.jars.packages", config.spark_jars_packages) \
                 .appName("Fraud Detection Pipeline") \
@@ -151,6 +153,59 @@ class FraudDetectionPipeline:
             StructField("transaction_id", StringType())
         ])
 
+    def save_model_to_hdfs(self, model):
+        """Save the trained model to HDFS"""
+        try:
+            # Generate model path with timestamp
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            model_path = f"/user/models/fraud_detection/model_{timestamp}"
+            
+            # Save model to HDFS
+            model.save(model_path)
+            
+            # Update model version to match the saved path
+            self.model_version = f"model_{timestamp}"
+            self.logger.info(f"Successfully saved model to HDFS: {model_path}")
+            
+            return model_path
+        except Exception as e:
+            self.logger.error(f"Error saving model to HDFS: {str(e)}")
+            raise
+
+    def load_latest_model_from_hdfs(self):
+        """Load the latest model from HDFS"""
+        try:
+            # List all models in the directory
+            models_path = "/user/models/fraud_detection"
+            models = self.spark._jvm.org.apache.hadoop.fs.Path(models_path)
+            fs = models.getFileSystem(self.spark._jsc.hadoopConfiguration())
+            
+            if not fs.exists(models):
+                self.logger.info("No existing models found in HDFS")
+                return None
+            
+            # Get all model directories
+            status = fs.listStatus(models)
+            if not status:
+                return None
+            
+            # Find the latest model
+            latest_model = max(
+                [path.getPath().toString() for path in status],
+                key=lambda x: x.split('_')[-1]
+            )
+            
+            # Load the model
+            from pyspark.ml import PipelineModel
+            model = PipelineModel.load(latest_model)
+            self.model_version = latest_model.split('/')[-1]
+            self.logger.info(f"Successfully loaded model from HDFS: {latest_model}")
+            
+            return model
+        except Exception as e:
+            self.logger.error(f"Error loading model from HDFS: {str(e)}")
+            return None
+
     def send_processed_message(self, result):
         """Send processed result to output topic"""
         try:
@@ -217,7 +272,7 @@ class FraudDetectionPipeline:
                    training_data3: List[Dict]):
         """Train the Random Forest model"""
         try:
-            # Convert training data to Spark DataFrames
+            # Convert training data to DataFrames
             train_data1_modified = [{**d, 'fraud': d.get('isFraud')} for d in training_data1]
             train_df1 = self.spark.createDataFrame(train_data1_modified, self.schema1)
             train_df2 = self.spark.createDataFrame(training_data2, self.schema2)
@@ -248,6 +303,10 @@ class FraudDetectionPipeline:
                 self.logger.error("Not enough data for training")
                 return
             self.model = pipeline.fit(train_df)
+            
+            # Save model to HDFS
+            model_path = self.save_model_to_hdfs(self.model)
+            self.logger.info(f"Model training completed and saved to {model_path}")
             
             # Calculate training metrics
             predictions = self.model.transform(
