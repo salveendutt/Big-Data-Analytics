@@ -1,3 +1,7 @@
+SET hive.exec.dynamic.partition=true;
+SET hive.exec.dynamic.partition.mode=nonstrict;
+
+
 create database if not exists fraud;
 use fraud;
 
