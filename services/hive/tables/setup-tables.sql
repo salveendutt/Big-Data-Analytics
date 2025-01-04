@@ -1,7 +1,5 @@
 SET hive.exec.dynamic.partition=true;
 SET hive.exec.dynamic.partition.mode=nonstrict;
-SET hive.metastore.partition.management.task.frequency=60s;
-SET hive.metastore.partition.management.enabled=true;
 
 create database if not exists fraud;
 use fraud;
@@ -41,15 +39,19 @@ LOCATION '/user/hive/warehouse/dataset2';
 
 CREATE EXTERNAL TABLE if not exists dataset3 (
     amt DOUBLE,
-    bin STRING,
+    bin INT,
     customer_id STRING,
     entry_mode STRING,
     fraud INT,
     fraud_scenario INT,
-    post_ts TIMESTAMP,
+    post_ts STRING,
     terminal_id STRING,
     transaction_id STRING
 )
 PARTITIONED BY (year STRING, month STRING, day STRING)
 STORED AS PARQUET
 LOCATION '/user/hive/warehouse/dataset3';
+
+msck repair table dataset1;
+msck repair table dataset2;
+msck repair table dataset3;
