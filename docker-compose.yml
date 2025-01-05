@@ -290,32 +290,23 @@ services:
         ipv4_address: 192.168.1.110
     depends_on:
       - cassandra
-      - coordinator
+      - presto
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8088/health"]
       interval: 10s
       timeout: 5s
       retries: 5
 
-  coordinator:
-    build:
-      context: ./services/presto
-      dockerfile: Dockerfile
-    container_name: coordinator
+  presto:
+    image: trinodb/trino:468
+    container_name: presto
     ports:
-      - '8080:8080'
+      - "8080:8080"
+    volumes:
+      - ./services/presto/etc/catalog:/etc/trino/catalog
     networks:
       custom_net:
         ipv4_address: 192.168.1.120
-    volumes:
-      - ./services/presto/etc/catalog:/etc/presto/catalog:ro
-      - ./services/presto/etc/config.properties:/etc/presto/config.properties:ro
-      - ./services/presto/etc/jvm.config:/etc/presto/jvm.config:ro
-      - ./services/presto/etc/node.properties:/etc/presto/node.properties:ro
-      - ./services/presto/data:/data/presto
-    environment:
-      - TERM=xterm
-      - LOG_LEVEL=DEBUG
     depends_on:
       - cassandra
 
@@ -331,4 +322,5 @@ volumes:
   hadoop_datanode:
   hive_postgresql_data:
   cassandra_data:
+  presto-data:
   superset_home:
