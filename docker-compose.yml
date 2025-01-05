@@ -125,6 +125,7 @@ services:
       CASSANDRA_NUM_TOKENS: 256
       CASSANDRA_SEEDS: "cassandra"
     volumes:
+      - cassandra_data:/var/lib/cassandra/data
       - ./services/cassandra/init-cql:/docker-entrypoint-initdb.d
     #   - ./services/cassandra/cassandra/data:/var/lib/cassandra/data  
 
@@ -274,3 +275,4 @@ volumes:
   hadoop_namenode:
   hadoop_datanode:
   hive_postgresql_data:
+  cassandra_data:
