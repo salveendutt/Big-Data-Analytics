@@ -1,0 +1,2 @@
+pushd ..
+docker-compose up --remove-orphans -d --build streaming_simulation hive-metastore hive-metastore-postgresql hive-server hive-postgresql-data hive-postgresql-data-postgresql cassandra nifi spark-master datanode namenode hive-metastore spark-worker hive-server zookeeper hive-metastore-postgresql
