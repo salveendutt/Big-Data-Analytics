@@ -48,7 +48,7 @@ Verify correct setup of the stream and data preprocessing functions & Run 'pytes
 \hline
 Verify the correct setup of Nifi - HDFS/Kafka flow & Run the containers - follow steps in README.md & Data flows from streamin API to Kafka topics and Hive tables & Passed. The screenshot is provided in Figure \ref{fig:kafka1}, \ref{fig:kafka2}, \ref{fig:kafka3}, \ref{fig:hive1} \\
 \hline
-Verify the correct setup of batch processing & Run the containers - follow steps in README.md & Views are available in the Cassandra tables & Passed. The screenshot is provided in Figure \ref{fig:cassandra-batch} \\
+Verify the correct setup of batch processing & Run the containers - follow steps in README.md & Views are available in the Cassandra tables & Passed. The screenshot is provided in Figure \ref{fig:cassandra-batch-1}, \ref{fig:cassandra-batch-2}, \ref{fig:cassandra-batch-3} \\
 \hline
 Verify the correct setup of streaming processing & Run the containers - follow steps in README.md & Views are available in the Cassandra tables & Passed. The screenshot is provided in Figure \ref{fig:cassandra-strean} \\
 \hline
@@ -117,9 +117,23 @@ Verify the correct setup of streaming processing & Run the containers - follow s
 
 \begin{figure}[h!]
   \centering
-  \includegraphics[width=0.95\textwidth]{images/m3-cassandra-streaming-processing.png}
+  \includegraphics[width=0.95\textwidth]{images/m3-cassandra-batch-1.png}
   \caption{Cassandra batch processing views}
-  \label{fig:cassandra-batch}
+  \label{fig:cassandra-batch-1}
+\end{figure}
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=0.95\textwidth]{images/m3-cassandra-batch-2.png}
+  \caption{Cassandra batch processing views}
+  \label{fig:cassandra-batch-2}
+\end{figure}
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=0.95\textwidth]{images/m3-cassandra-batch-3.png}
+  \caption{Cassandra batch processing views}
+  \label{fig:cassandra-batch-3}
 \end{figure}
 
 \begin{figure}[h!]
