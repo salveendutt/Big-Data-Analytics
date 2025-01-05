@@ -18,7 +18,7 @@ SQLALCHEMY_TRACK_MODIFICATIONS = True
 # Cassandra connection configuration via Presto
 ADDITIONAL_DATABASES = {
     "cassandra": {
-        "sqlalchemy_uri": "presto://coordinator:8080/cassandra/fraud_analytics",
+        "sqlalchemy_uri": "trino://admin:@presto:8080/cassandra/fraud_analytics",
         "allow_ctas": False,
         "allow_cvas": False,
         "allow_dml": False,
@@ -26,9 +26,9 @@ ADDITIONAL_DATABASES = {
         "extra": {
             "metadata_params": {},
             "engine_params": {
-                "connect_args": {}
-            }
-        }
+                "connect_args": {"protocol": "https", "source": "superset"}
+            },
+        },
     }
 }
 
