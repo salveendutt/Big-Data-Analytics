@@ -25,13 +25,10 @@
 \renewcommand{\headrulewidth}{0pt}  % Remove the header line
 
 % TODO:
-% 1.Updates to the PM2 report in case of changes to business and technical assumptions (including a justification for modifications)
 % The results of exploratory data analysis (including plots, histograms, etc.)
-% A complete system architecture (diagram and description)
-% The final description of data preprocessing including modifications to PM2 implementation (e.g. handling incomplete data, data filtering and aggregation, feature selection)
+% This one is done I think (I remember that we should join the streams somehow? I still don't understand what professor meant, I don't think we have that) - The final description of data preprocessing including modifications to PM2 implementation (e.g. handling incomplete data, data filtering and aggregation, feature selection)
 % The description of the analytical module including key performance measures
 % Summary of tasks planned to finish the project
-% Documentation of the contribution of individual team members to the solutions created in the project (software, reports)
 
 
 
@@ -53,7 +50,7 @@
     % \vspace{2cm}
     \begin{flushright}
 
-    {\Large\textbf Salveen Singh Dutt (317298) \\ Karina Tiurina (335943) \\ Mikołaj Malec (298828) \\ Patryk Prusak (305794) \par}
+    {\Large\textbf Salveen Singh Dutt (317298) \\ Karina Tiurina (335943)  \\ Patryk Prusak (305794) \par}
     \vfill
     {Supervisor\par}
     {\Large mgr inz. Jakub Abelski \par}
@@ -74,9 +71,7 @@
 \section*{Introduction}
 \addcontentsline{toc}{section}{Introduction}
 
-This project aims to plan and implement a financial transaction processing system that identifies suspicious and fraudulent activity in real-time. Given the enormous volume of incoming data, the project will utilize big data technologies and advanced machine learning algorithms for anomaly detection.
-
-GitHub repository: \href{https://github.com/salveendutt/Big-Data-Analytics}{https://github.com/salveendutt/Big-Data-Analytics}.
+This project aims to plan and implement a financial transaction processing system that identifies suspicious and fraudulent activity in real-time. Given the enormous volume of incoming data, the project will utilize big data technologies and advanced machine learning algorithms for anomaly detection. Lastly, Apache NiFi flow has been improved to accomodated for missing or incorrect data. The incoming stream is being validated and conformed to the required format. In case of any errors, the data is being logged. The project is available on the GitHub repository: \href{https://github.com/salveendutt/Big-Data-Analytics}{https://github.com/salveendutt/Big-Data-Analytics}.
 
 \subsection*{Updates from Milestone 2}
 \addcontentsline{toc}{subsection}{Updates from Milestone 2}
@@ -308,47 +303,53 @@ When the server is started, stream API is available on localhost:5001/data/:data
 Below, we present the NiFi flows for the data acquisition. Processor failures are retried 10 times, and errors are logged with the LogMessage processor with a level of 'error.' The first flow is the overview of the whole process. The three processor groups are responsible for fetching and processing the data. Inside each of the processor groups, there are:
 \begin{itemize}
     \item InvokeHTTP - to fetch the data from the stream API,
-    \item EvaluateJsonPath - to extract the data from the JSON format,
-    \item ReplaceText - to construct a CQL query for the Cassandra,
+    \item EvaluateJsonPath - to evaluate whether any data is missing,
+    \item ReplaceText - to add year, month, and day that is used for data partitioning in Hive,
     \item PublishKafkaRecord - to send the data to Kafka,
-    \item LogMessage - to log the errors.
+    \item JoltTransformJSON - to preprocess the data into desired format,
+    \item UpdateAttribute - to add the hdfs path attribute to the data that depends on the year, month, and day,
+    \item ConvertRecord - to convert the data to the Parquet format,
+    \item LogMessage - to log the errors,
+    \item PutHDFS - to store the data in HDFS.
 \end{itemize}
 
 
 \begin{figure}[h!]
     \centering
-    \includegraphics[width=0.95\textwidth]{images/m2-nifi-1.png}
+    \includegraphics[width=0.95\textwidth]{images/m3-nifi-main-view.png}
     \caption{NiFi flow for the data acquisition}
     \label{fig:nifi1}
 \end{figure}
 \begin{figure}[h!]
     \centering
-    \includegraphics[width=0.95\textwidth]{images/m2-nifi-2.png}
+    \includegraphics[width=0.95\textwidth]{images/m3-nifi-processor.png}
     \caption{Data processing flow in NiFi}
     \label{fig:nifi2}
 \end{figure}
 \section{Data storage strategy}
 
-Our input data consists of structured data; there is no need to store particular data types, such as images, text files, audio, etc. Therefore, we decided to utilize an SQL-like (CQL) data warehouse system that enables analytics at a massive scale - Apache Cassandra.
+Our input data consists of structured data; there is no need to store particular data types, such as images, text files, audio, etc. Therefore, we decided to utilize an SQL-like (CQL) data warehouse system that enables analytics at a massive scale - Apache Hive.
 
 As described in Chapter 2, our datasets contain entirely different sets of features, which makes it impossible to combine them in a single table. All incoming transactions will be divided into four groups for each dataset. The code block below represents an example of table creation for dataset 1 of the project.
 
 
-\begin{lstlisting}[language=SQL, caption=Apache Cassandra table creation]
-    CREATE TABLE dataset1 (
-        step INT,
-        type TEXT,
-        amount DECIMAL,
-        isFlaggedFraud INT,
-        isFraud INT,
-        nameDest TEXT,
-        nameOrig TEXT,
-        newbalanceDest DECIMAL,
-        newbalanceOrig DECIMAL,
-        oldbalanceDest DECIMAL,
-        oldbalanceOrg DECIMAL,
-        PRIMARY KEY (step, nameOrig)
-    );
+\begin{lstlisting}[language=SQL, caption=Apache Hive table creation]
+CREATE EXTERNAL TABLE if not exists dataset1 (
+    step INT,
+    type STRING,
+    amount FLOAT,
+    nameOrig STRING,
+    oldbalanceOrg FLOAT,
+    newbalanceOrig FLOAT,
+    nameDest STRING,
+    oldbalanceDest FLOAT,
+    newbalanceDest FLOAT,
+    isFraud INT,
+    isFlaggedFraud INT
+)
+PARTITIONED BY (year STRING, month STRING, day STRING)
+STORED AS PARQUET
+LOCATION '/user/hive/warehouse/dataset1';
 \end{lstlisting}
 
 The preliminary list of all tables in the storage is the following:
@@ -364,12 +365,12 @@ The preliminary list of all tables in the storage is the following:
     \item dataset4\_processed - processed data for the dataset 4.
 \end{enumerate}
 
-Additionally, we will use MongoDB to store prepared views for fast querying during the data presentation. Typically, it replicates the processed data from batch and streaming layers. This includes predicted labels for new transactions and an indication of whether data was used for training.
+Additionally, we will use Apache Cassandra to store prepared views for fast querying during the data presentation. Typically, it replicates the processed data from batch and streaming layers. This includes predicted labels for new transactions and an indication of whether data was used for training.
 
 
 \section{Project architecture}
 
-We are planning to implement the project based on Lambda Architecture. The main data processing will be divided into three layers:
+The project is implemented based on Lambda Architecture. The main data processing is be divided into three layers:
 
 \begin{enumerate}
     \item Speed Layer (streaming)
@@ -394,7 +395,7 @@ Figure 1 shows an outline of the project architecture.
 
 \begin{figure}[htbp]
     \centering
-    \includegraphics[width=0.95\textwidth]{images/m2-architecture.drawio.png}
+    \includegraphics[width=0.95\textwidth]{images/m3-architecture.drawio.png}
     \caption{Project architecture}
     \label{fig:architecture}
 \end{figure}
@@ -402,10 +403,10 @@ Figure 1 shows an outline of the project architecture.
 The following Big Data platforms will be used:
 \begin{itemize}
     \item Apache NiFi: to collect and distribute the data from different sources;
-    \item Apache Cassandra as a data storage;
+    \item Apache Hadoop HDFS and Hive: as the main storage solution;
+    \item Apache Cassandra as a view storage for fast querying;
     \item Apache Kafka: to work with the streaming data;
     \item Apache Spark: to make the batch processing and model training;
-    \item MongoDB: to store prepared batch views and real-time views for fast querying;
     \item Apache Superset (to be agreed with the supervisor): for data analysis on the user interface. If the service is not approved, UI will be implemented from scratch using a JS framework, e.g., React.
 \end{itemize}
 
@@ -448,7 +449,7 @@ Batch processing will focus on historical data analysis, feature engineering, an
 \begin{enumerate}
     \item Data Ingestion:
         \begin{itemize}
-            \item Periodic ingestion of historical transactions from data storage sources (Apache Cassandra).
+            \item Periodic ingestion of historical transactions from data storage sources (Apache Hive).
             \item Data preprocessing to validate and filter incomplete or invalid entries.
             \item Aggregation of transactional data for customer-level or terminal-level insights.
         \end{itemize}
@@ -491,7 +492,7 @@ The serving layer will provide a unified view of real-time and batch-processed d
 \begin{enumerate}
     \item Unified Data Storage:
         \begin{itemize}
-            \item MongoDB will be the primary storage for batch and real-time data, enabling fast querying and retrieval.
+            \item Apache Cassandra will be the primary storage for batch and real-time data, enabling fast querying and retrieval.
         \end{itemize}
     \item Client Interfaces:
         \begin{itemize}
@@ -520,8 +521,8 @@ In this architecture, we propose to use Apache Superset as the primary tool for 
 \subsection{Integration of Apache Superset with the Current Architecture}
 As illustrated in the architecture diagram:
 \begin{itemize}
-    \item The \textbf{Batch Layer}, powered by Apache Cassandra, processes large-scale data and aggregates it into queryable formats.
-    \item The \textbf{Speed Layer}, which uses Kafka for real-time data ingestion and Spark for processing, produces real-time views stored in MongoDB. Superset can connect to MongoDB to display these real-time analytics, provided an appropriate SQL-like connector (e.g., MongoDB BI Connector) is configured.
+    \item The \textbf{Batch Layer}, powered by Apache Hive, processes large-scale data and aggregates it into queryable formats.
+    \item The \textbf{Speed Layer}, which uses Kafka for real-time data ingestion and Spark for processing, produces real-time views stored in MongoDB. Superset can connect to Apache Cassandra to display these real-time analytics, provided an appropriate connector is configured.
     \item The \textbf{Serving Layer} facilitates the querying of both batch and real-time views, making this data accessible to Superset for visualization in unified dashboards.
 \end{itemize}
 
@@ -540,8 +541,8 @@ By integrating Superset with batch and speed layers, the system can provide user
 While Superset provides significant benefits, there are a few challenges and limitations to consider:
 \begin{itemize}
     \item \textbf{Indirect Support for Kafka}: Superset does not natively connect to Kafka. Before it can be visualized, real-time data from Kafka must first be stored in a queryable data store (e.g., MongoDB or a similar OLAP engine).
-    \item \textbf{MongoDB Support}: Superset does not have native support for MongoDB. An SQL-like connector (such as the MongoDB BI Connector) or data transformation into another supported format is required, adding some complexity.
-    \item \textbf{Performance Considerations}: For real-time monitoring, performance can be a bottleneck if the underlying data stores (e.g., MongoDB or Cassandra) are not optimized for frequent querying by Superset.
+    \item \textbf{Cassandra Support}: Superset does not have native support for Cassandra. Integration through a Python library is required, adding some complexity.
+    \item \textbf{Performance Considerations}: For real-time monitoring, performance can be a bottleneck if the underlying data stores are not optimized for frequent querying by Superset.
     \item \textbf{Learning Curve for Advanced Features}: While the primary interface is user-friendly, advanced configurations (e.g., complex filters and custom SQL queries) may require technical expertise.
 \end{itemize}
 
