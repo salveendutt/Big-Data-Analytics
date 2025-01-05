@@ -6,7 +6,7 @@
 2. Start docker desktop
 3. Download datasets pointed below
 4. Modify config files if needed
-5. Navigate to 'scripts' folder and run start_containers.bat
+5. Navigate to 'scripts' folder and run start_containers.bat (alternatively one can run only certain scenarios such as streaming processing flow, data ingestion to hive or batch processing, all scripts are available in the 'scripts' folder)
 6. After a couple of minutes run the post_start.bat in 'scripts' folder. It will create Hive tables and install necessary spark worker dependencies
 6. You should be able to access the services (look at docker-compose for ports and addresses, look at authorization-access-data.json for credentials)
 
