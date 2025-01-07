@@ -38,6 +38,8 @@ import logging
 from kafka.errors import NoBrokersAvailable
 import numpy as np
 import uuid
+import pandas as pd
+from sklearn.model_selection import train_test_split
 
 
 class FraudDetectionPipeline:
@@ -263,16 +265,19 @@ class FraudDetectionPipeline:
         """Train all three models using their respective datasets"""
         try:
             # Convert training data to DataFrames
+            self.logger.info("Creating dataframes")
             train_data1 = self.spark.createDataFrame(training_data1)
             train_data2 = self.spark.createDataFrame(training_data2)
             train_data3 = self.spark.createDataFrame(training_data3)
 
             # Preprocess training data
+            self.logger.info("Preprocessing datasets")
             train_data1 = self.preprocess_dataset1(train_data1)
             train_data2 = self.preprocess_dataset2(train_data2)
             train_data3 = self.preprocess_dataset3(train_data3)
 
             # Create feature vectors
+            self.logger.info("Creating feature vectors")
             train_data1 = self.create_feature_vector1(train_data1)
             train_data2 = self.create_feature_vector2(train_data2)
             train_data3 = self.create_feature_vector3(train_data3)
@@ -294,9 +299,13 @@ class FraudDetectionPipeline:
             pipeline3 = Pipeline(stages=[rf3])
 
             # Train models
+            self.logger.info("Training on dataset1")
             self.model1 = pipeline1.fit(train_data1)
+            self.logger.info("Training on dataset2")
             self.model2 = pipeline2.fit(train_data2)
+            self.logger.info("Training on dataset3")
             self.model3 = pipeline3.fit(train_data3)
+            self.logger.info("Training completed")
 
             # Save models with timestamp
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -605,47 +614,10 @@ class FraudDetectionPipeline:
 
         try:
             # Generate training data
-            training_data1 = [
-                {
-                    "step": 1,
-                    "type": "TRANSFER",
-                    "amount": 9999.99,
-                    "nameOrig": "C123456789",
-                    "oldbalanceOrg": 10000.00,
-                    "newbalanceOrg": 0.01,
-                    "nameDest": "M789012345",
-                    "oldbalanceDest": 150.00,
-                    "newbalanceDest": 10149.99,
-                    "isFraud": 1,
-                    "isFlaggedFraud": 1,
-                },
-                {
-                    "step": 2,
-                    "type": "PAYMENT",
-                    "amount": 250.00,
-                    "nameOrig": "C987654321",
-                    "oldbalanceOrg": 2500.00,
-                    "newbalanceOrg": 2250.00,
-                    "nameDest": "M543210987",
-                    "oldbalanceDest": 5000.00,
-                    "newbalanceDest": 5250.00,
-                    "isFraud": 0,
-                    "isFlaggedFraud": 0,
-                },
-                {
-                    "step": 3,
-                    "type": "CASH_OUT",
-                    "amount": 15000.00,
-                    "nameOrig": "C111222333",
-                    "oldbalanceOrg": 15100.00,
-                    "newbalanceOrg": 100.00,
-                    "nameDest": "M444555666",
-                    "oldbalanceDest": 0.00,
-                    "newbalanceDest": 15000.00,
-                    "isFraud": 1,
-                    "isFlaggedFraud": 1,
-                },
-            ]
+            training_df1 = pd.read_csv("./datasets/Fraud.csv")
+            training_data1, _ = train_test_split(training_df1, test_size=0.9999, random_state=2025, stratify=training_df1['isFraud'])
+            training_data1 = training_data1.to_dict(orient='records')
+            self.logger.info("Dataset1 is loaded")
 
             training_data2 = [
                 {
