@@ -42,8 +42,10 @@ services:
 
   batch_processing:
     build:
-      context: ./services/batch_processing
-      dockerfile: Dockerfile
+      # context: ./services/batch_processing
+      # dockerfile: Dockerfile
+      context: .
+      dockerfile: ./services/batch_processing/Dockerfile
     container_name: batch_processing
     networks:
       custom_net:
