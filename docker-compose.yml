@@ -28,8 +28,10 @@ services:
 
   streaming_simulation:
     build:
-      context: ./services/streaming_simulation
-      dockerfile: Dockerfile
+      # context: ./services/streaming_simulation
+      # dockerfile: Dockerfile
+      context: .
+      dockerfile: ./services/streaming_simulation/Dockerfile
     container_name: streaming_simulation
     networks:
       custom_net:
@@ -40,8 +42,10 @@ services:
 
   batch_processing:
     build:
-      context: ./services/batch_processing
-      dockerfile: Dockerfile
+      # context: ./services/batch_processing
+      # dockerfile: Dockerfile
+      context: .
+      dockerfile: ./services/batch_processing/Dockerfile
     container_name: batch_processing
     networks:
       custom_net:
@@ -55,8 +59,10 @@ services:
 
   streaming_processing:
     build:
-      context: ./services/streaming_processing
-      dockerfile: Dockerfile
+      # context: ./services/streaming_processing
+      # dockerfile: Dockerfile
+      context: .
+      dockerfile: ./services/streaming_processing/Dockerfile
     container_name: streaming_processing
     networks:
       custom_net:

@@ -5,7 +5,25 @@ on:
       - main
 jobs:
 
-  test-processing-simulation:
+  test-streaming-processing:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v3
+        with:
+          python-version: 3.12.7
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest
+          pip install -r ./services/streaming_processing/streaming_processing_requirements.txt
+      - name: Run tests
+        run: |
+          pytest ./services/streaming_processing
+
+  test-streaming-simulation:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -17,11 +35,10 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r ./services/streaming_processing/streaming_processing_requirements.txt
           pip install -r ./services/streaming_simulation/streaming-requirements.txt
       - name: Run tests
         run: |
-          pytest ./services/streaming_simulation ./services/streaming_processing
+          pytest ./services/streaming_simulation
 
   test-batch:
     runs-on: ubuntu-latest
