@@ -15,6 +15,16 @@ CREATE TABLE IF NOT EXISTS fraud_by_transaction_type (
     PRIMARY KEY (type)
 );
 
+-- Table for fraud statistics by amount bucket
+CREATE TABLE IF NOT EXISTS fraud_by_amount_bucket (
+    amount_bucket text,
+    total_transactions bigint,
+    total_fraudulent bigint,
+    avg_amount double,
+    fraud_rate double,
+    PRIMARY KEY (amount_bucket)
+);
+
 -- Table for hourly fraud statistics
 CREATE TABLE IF NOT EXISTS hourly_fraud_stats (
     hour int,
