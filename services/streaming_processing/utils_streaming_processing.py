@@ -452,103 +452,118 @@ class FraudDetectionPipeline:
 
     def process_messages(self):
         """Process messages from all Kafka topics"""
-        messages = {topic: None for topic in config.kafka_topics}
         try:
-            # Get messages from all topics
-            for consumer in self.consumers.values():
-                message = next(consumer)
-                messages[message.topic] = message
+            ssc = StreamingContext(self.spark.sparkContext, 10)
 
-            if all(messages.values()):
-                message1 = messages["dataset1"].value
-                message2 = messages["dataset2"].value
-                message3 = messages["dataset3"].value
+            kafka_stream = KafkaUtils.createDirectStream(
+                ssc,
+                [topic for topic in config.kafka_topics],
+                {
+                    "bootstrap.servers": config.kafka_address,
+                    "group.id": "fraud-detection-group",
+                    "key.deserializer": "org.apache.kafka.common.serialization.StringDeserializer",
+                    "value.deserializer": "org.apache.kafka.common.serialization.StringDeserializer",
+                },
+            )
 
-                # Create DataFrames
-                df1 = self.spark.createDataFrame([message1], self.schema1)
-                df2 = self.spark.createDataFrame([message2], self.schema2)
-                df3 = self.spark.createDataFrame([message3], self.schema3)
+            kafka_stream.foreachRDD(
+                lambda rdd: self.process_kafka_messages(rdd.collect())
+            )
 
-                # Preprocess the data
-                df1_processed = self.preprocess_dataset1(df1)
-                df2_processed = self.preprocess_dataset2(df2)
-                df3_processed = self.preprocess_dataset3(df3)
-
-                # Create feature vectors for each model
-                test_data1 = self.create_feature_vector1(df1_processed)
-                test_data2 = self.create_feature_vector2(df2_processed)
-                test_data3 = self.create_feature_vector3(df3_processed)
-
-                # Make predictions
-                if self.model1 and self.model2 and self.model3:
-                    get_fraud_prob = udf(lambda v: float(v.values[1]), DoubleType())
-
-                    prediction1 = self.model1.transform(test_data1)
-                    prediction1 = prediction1.select(
-                        "transaction_id",
-                        "type",
-                        "amount",
-                        "nameOrig",
-                        "nameDest",
-                        "fraud",
-                        "prediction",
-                        get_fraud_prob("probability").alias("fraud_probability"),
-                    )
-
-                    prediction2 = self.model2.transform(test_data2)
-                    prediction2 = prediction2.select(
-                        "fraud",
-                        "prediction",
-                        get_fraud_prob("probability").alias("fraud_probability"),
-                    )
-
-                    prediction3 = self.model3.transform(test_data3)
-                    prediction3 = prediction3.select(
-                        "fraud",
-                        "prediction",
-                        get_fraud_prob("probability").alias("fraud_probability"),
-                        "customer_id",
-                        "transaction_id",
-                    )
-
-                    # Extract prediction results
-                    result1 = prediction1.collect()[0]
-                    result2 = prediction2.collect()[0]
-                    result3 = prediction3.collect()[0]
-
-                    # Calculate ensemble probability (average of all models)
-                    ensemble_probability = (
-                        float(result1.fraud_probability)
-                        + float(result2.fraud_probability)
-                        + float(result3.fraud_probability)
-                    ) / 3.0
-
-                    # Save prediction to Cassandra
-                    prediction_data = {
-                        "transaction_id": result1.transaction_id,
-                        "type": result1.type,
-                        "amount": float(result1.amount),
-                        "customer_id": result3.customer_id,
-                        "model1_fraud_probability": float(result1.fraud_probability),
-                        "model2_fraud_probability": float(result2.fraud_probability),
-                        "model3_fraud_probability": float(result3.fraud_probability),
-                        "ensemble_fraud_probability": float(ensemble_probability),
-                        "prediction_timestamp": datetime.now().strftime(
-                            "%Y-%m-%d %H:%M:%S"
-                        ),
-                    }
-
-                    self.save_prediction_to_cassandra(prediction_data)
-
-                    self.logger.info(f"Processed transaction: {result1.transaction_id}")
-                    return result1
-                else:
-                    self.logger.warning("Models not trained yet")
-                    return None
+            # Start the Spark Streaming Context
+            ssc.start()
+            ssc.awaitTermination()
 
         except Exception as e:
             self.logger.error(f"Error processing messages: {e}")
             raise
+
+    def process_kafka_messages(self, messages):
+        """Process messages from all Kafka topics"""
+        if not messages:
+            return
+
+        message1 = messages[0]
+        message2 = messages[1]
+        message3 = messages[2]
+
+        # Create DataFrames
+        df1 = self.spark.createDataFrame([message1.value], self.schema1)
+        df2 = self.spark.createDataFrame([message2.value], self.schema2)
+        df3 = self.spark.createDataFrame([message3.value], self.schema3)
+
+        # Preprocess the data
+        df1_processed = self.preprocess_dataset1(df1)
+        df2_processed = self.preprocess_dataset2(df2)
+        df3_processed = self.preprocess_dataset3(df3)
+
+        # Create feature vectors for each model
+        test_data1 = self.create_feature_vector1(df1_processed)
+        test_data2 = self.create_feature_vector2(df2_processed)
+        test_data3 = self.create_feature_vector3(df3_processed)
+
+        # Make predictions
+        if self.model1 and self.model2 and self.model3:
+            get_fraud_prob = udf(lambda v: float(v.values[1]), DoubleType())
+
+            prediction1 = self.model1.transform(test_data1)
+            prediction1 = prediction1.select(
+                "transaction_id",
+                "type",
+                "amount",
+                "nameOrig",
+                "nameDest",
+                "fraud",
+                "prediction",
+                get_fraud_prob("probability").alias("fraud_probability"),
+            )
+
+            prediction2 = self.model2.transform(test_data2)
+            prediction2 = prediction2.select(
+                "fraud",
+                "prediction",
+                get_fraud_prob("probability").alias("fraud_probability"),
+            )
+
+            prediction3 = self.model3.transform(test_data3)
+            prediction3 = prediction3.select(
+                "fraud",
+                "prediction",
+                get_fraud_prob("probability").alias("fraud_probability"),
+                "customer_id",
+                "transaction_id",
+            )
+
+            # Extract prediction results
+            result1 = prediction1.collect()[0]
+            result2 = prediction2.collect()[0]
+            result3 = prediction3.collect()[0]
+
+            # Calculate ensemble probability (average of all models)
+            ensemble_probability = (
+                float(result1.fraud_probability)
+                + float(result2.fraud_probability)
+                + float(result3.fraud_probability)
+            ) / 3.0
+
+            # Save prediction to Cassandra
+            prediction_data = {
+                "transaction_id": result1.transaction_id,
+                "type": result1.type,
+                "amount": float(result1.amount),
+                "customer_id": result3.customer_id,
+                "model1_fraud_probability": float(result1.fraud_probability),
+                "model2_fraud_probability": float(result2.fraud_probability),
+                "model3_fraud_probability": float(result3.fraud_probability),
+                "ensemble_fraud_probability": float(ensemble_probability),
+                "prediction_timestamp": datetime.now().strftime(
+                    "%Y-%m-%d %H:%M:%S"
+                ),
+            }
+
+            self.save_prediction_to_cassandra(prediction_data)
+
+            self.logger.info(f"Processed transaction: {result1.transaction_id}")
 
     def run(self):
         """Main processing loop"""
