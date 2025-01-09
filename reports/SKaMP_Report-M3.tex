@@ -462,7 +462,28 @@ On the container start the model training is performed on the train subset of th
 As the next step, Apache Spark starts to read 3 Kafka topics for the incoming messages. If any messages occur, the data is preprocessed and send to the model for prediction. Resulted fraud probabilites are sent to the Cassandra for later use.
 
 \section{Batch Layer}
-TODO - what do we do in batch processing currently?
+
+Batch layer is implemented using Apache Spark. On a regular basis (currently, every 5 minutes), the transactions data is taken from Hive to prepare some analytics on it. The resulted data is stored in Cassandra in incremental manner.
+
+In particular, we are currently preparing data for the following views:
+\begin{enumerate}
+    \item Fraud Statistics by Transaction Type for the Dataset 1
+    \begin{itemize}
+        \item To analyze fraud patterns based on transaction types. We calculate fraud rate across specific transaction types to investigate wheather certain types are more or less vulnerable to fraud.
+    \end{itemize}
+    \item Fraud Statistics by Transaction Amount for the Dataset 1
+    \begin{itemize}
+        \item To analyze fraud patterns based on transaction amounts. Similar to previous view, fraud rate is calculated, but across several amount ranges (0-1000, 1000-10000, 10000-50000, 50000-100000, 100000-500000, 500000+) instead of types.
+    \end{itemize}
+    \item Hourly Fraud Statistics for the Dataset 2
+    \begin{itemize}
+        \item To identify trends in fraudulent activities based on transaction hours. Given timestamp of each transaction we calculate amount of fraud as well as percentage of fraud transactions per time frame (e.g. hour);
+    \end{itemize}
+    \item High-Risk Customer Analysis for the Dataset 2
+    \begin{itemize}
+        \item To identify customers with high likelihood of fraud. Total amount of transactions per customer as well as fraud percentage are caluclated.
+    \end{itemize}
+\end{enumerate}
 
 
 
