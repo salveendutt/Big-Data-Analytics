@@ -440,9 +440,9 @@ The following Big Data platforms will be used:
 
 \section{Speed Layer}
 
-Stream processing container is responsible for two main tasks: model training and messages processing. 
+The stream processing container is responsible for two main tasks: model training and message processing. 
 
-At the moment we have tested 4 models for the fraud detection and selected Random Forest as it provided better performance on all of the datasets. Comparison of the model's performance are provided in the table below including metrics precision (P) and recall (R).
+At the moment, we have tested 4 models for fraud detection and selected Random Forest as it provided better performance on all of the datasets. A comparison of the model's performance is provided in the table below, including metrics precision (P) and recall (R).
 
 \begin{table}[h!]
 \centering
@@ -457,31 +457,31 @@ At the moment we have tested 4 models for the fraud detection and selected Rando
 \label{tab:metrics}
 \end{table}
 
-On the container start the model training is performed on the train subset of the 3 datasets. This solution requires quite a lot of hardware resources. Therefore, we are planning to exlude this step for the Milestone 4, and load a pre-trained in advance model instead.
+At the container start, the model training is performed on the training subset of the 3 datasets. This solution requires quite a lot of hardware resources. Therefore, we plan to exclude this step for Milestone 4 and load a pre-trained in-advance model instead.
 
-As the next step, Apache Spark starts to read 3 Kafka topics for the incoming messages. If any messages occur, the data is preprocessed and send to the model for prediction. Resulted fraud probabilites are sent to the Cassandra for later use.
+As the next step, Apache Spark reads 3 Kafka topics for the incoming messages. If any messages occur, the data is preprocessed and sent to the model for prediction. Resulted fraud probabilities are sent to Cassandra for later use.
 
 \section{Batch Layer}
 
-Batch layer is implemented using Apache Spark. On a regular basis (currently, every 5 minutes), the transactions data is taken from Hive to prepare some analytics on it. The resulted data is stored in Cassandra in incremental manner.
+The batch layer is implemented using Apache Spark. On a regular basis (currently, every 5 minutes), the transaction data is taken from Hive to prepare some analytics on it. The resulting data is stored in Cassandra incrementally.
 
 In particular, we are currently preparing data for the following views:
 \begin{enumerate}
     \item Fraud Statistics by Transaction Type for the Dataset 1
     \begin{itemize}
-        \item To analyze fraud patterns based on transaction types. We calculate fraud rate across specific transaction types to investigate wheather certain types are more or less vulnerable to fraud.
+        \item To analyze fraud patterns based on transaction types. We calculate fraud rates across specific transaction types to investigate whether certain types are more or less vulnerable to fraud.
     \end{itemize}
     \item Fraud Statistics by Transaction Amount for the Dataset 1
     \begin{itemize}
-        \item To analyze fraud patterns based on transaction amounts. Similar to previous view, fraud rate is calculated, but across several amount ranges (0-1000, 1000-10000, 10000-50000, 50000-100000, 100000-500000, 500000+) instead of types.
+        \item To analyze fraud patterns based on transaction amounts. Similar to the previous view, the fraud rate is calculated, but across several amount ranges (0-1000, 1000-10000, 10000-50000, 50000-100000, 100000-500000, 500000+) instead of types.
     \end{itemize}
     \item Hourly Fraud Statistics for the Dataset 2
     \begin{itemize}
-        \item To identify trends in fraudulent activities based on transaction hours. Given timestamp of each transaction we calculate amount of fraud as well as percentage of fraud transactions per time frame (e.g. hour);
+        \item To identify trends in fraudulent activities based on transaction hours. Given the timestamp of each transaction, we calculate the  amount of fraud as well as the percentage of fraud transactions per time frame (e.g., hour);
     \end{itemize}
     \item High-Risk Customer Analysis for the Dataset 2
     \begin{itemize}
-        \item To identify customers with high likelihood of fraud. Total amount of transactions per customer as well as fraud percentage are caluclated.
+        \item To identify customers with a high likelihood of fraud. The total amount of transactions per customer, as well as the fraud percentage, are calculated.
     \end{itemize}
 \end{enumerate}
 
