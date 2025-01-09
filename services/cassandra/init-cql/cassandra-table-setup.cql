@@ -80,16 +80,10 @@ CREATE TABLE predictions2 (
     fraud_probability FLOAT,
     PRIMARY KEY (id)
 );
-
 CREATE TABLE predictions3 (
     id UUID,
-    transaction_id TEXT,
-    type TEXT,
-    amount DOUBLE,
-    nameOrig TEXT,
-    nameDest TEXT,
     fraud BOOLEAN,
-    prediction INT,
+    customer_id TEXT,
     fraud_probability FLOAT,
     PRIMARY KEY (id)
 );

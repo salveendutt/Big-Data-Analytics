@@ -478,6 +478,7 @@ class FraudDetectionPipeline:
     def process_messages(self):
         """Create Spark streams and join them"""
         try:
+            get_fraud_prob = udf(lambda v: float(v.values[1]), DoubleType())
             kafka_stream_1 = (
                 self.spark.readStream.format("kafka")
                 .option("kafka.bootstrap.servers", config.kafka_address)
@@ -486,7 +487,9 @@ class FraudDetectionPipeline:
                 .load()
             )
             parsed_stream = kafka_stream_1.select(
-                from_json(col("value").cast("string"), self.schema1).alias("parsed_data")
+                from_json(col("value").cast("string"), self.schema1).alias(
+                    "parsed_data"
+                )
             ).select("parsed_data.*")
             train_data1 = self.preprocess_dataset1(parsed_stream)
             feature_vector = self.create_feature_vector1(train_data1)
@@ -496,20 +499,18 @@ class FraudDetectionPipeline:
                 "transaction_id",
                 (col("prediction") > 0.5).cast("boolean").alias("fraud"),
                 col("prediction").cast("int").alias("prediction"),
-                col("probability").getItem(1).cast("float").alias("fraud_probability"),
+                get_fraud_prob("probability").alias("fraud_probability"),
                 col("nameOrig").alias("customer_id"),
-                
             )
-            query = cassandra_stream.writeStream \
-                .format("org.apache.spark.sql.cassandra") \
-                .option("checkpointLocation", "/tmp/checkpoints/cassandra") \
-                .option("keyspace", "fraud_analytics") \
-                .option("table", "predictions1") \
-                .outputMode("append") \
-                .trigger(processingTime="5 seconds") \
+            query = (
+                cassandra_stream.writeStream.format("org.apache.spark.sql.cassandra")
+                .option("checkpointLocation", "/tmp/checkpoints/cassandra")
+                .option("keyspace", "fraud_analytics")
+                .option("table", "predictions1")
+                .outputMode("append")
+                .trigger(processingTime="5 seconds")
                 .start()
-
-
+            )
 
             # kafka_stream_2 = (
             #     self.spark.readStream.format("kafka")
@@ -518,25 +519,29 @@ class FraudDetectionPipeline:
             #     .option("startingOffsets", "earliest")
             #     .load()
             # )
-            parsed_stream = kafka_stream_2.select(
-                from_json(col("value").cast("string"), self.schema2).alias("parsed_data")
-            ).select("parsed_data.*")
-            feature_vector = self.create_feature_vector2(parsed_stream)
-            predictions = self.model2.transform(feature_vector)
-            cassandra_stream = predictions.select(
-                uuid_udf().alias("id"),
-                (col("prediction") > 0.5).cast("boolean").alias("fraud"),
-                col("prediction").cast("int").alias("prediction"),
-                col("probability").getItem(1).cast("float").alias("fraud_probability")
-            )
-            query = cassandra_stream.writeStream \
-                .format("org.apache.spark.sql.cassandra") \
-                .option("checkpointLocation", "/tmp/checkpoints/cassandra") \
-                .option("keyspace", "fraud_analytics") \
-                .option("table", "predictions2") \
-                .outputMode("append") \
-                .trigger(processingTime="5 seconds") \
-                .start()
+            # parsed_stream = kafka_stream_2.select(
+            #     from_json(col("value").cast("string"), self.schema2).alias(
+            #         "parsed_data"
+            #     )
+            # ).select("parsed_data.*")
+            # train_data2 = self.preprocess_dataset2(parsed_stream)
+            # feature_vector = self.create_feature_vector2(train_data2)
+            # predictions = self.model2.transform(feature_vector)
+            # cassandra_stream = predictions.select(
+            #     uuid_udf().alias("id"),
+            #     (col("prediction") > 0.5).cast("boolean").alias("fraud"),
+            #     col("prediction").cast("int").alias("prediction"),
+            #     get_fraud_prob("probability").alias("fraud_probability"),
+            # )
+            # query = (
+            #     cassandra_stream.writeStream.format("org.apache.spark.sql.cassandra")
+            #     .option("checkpointLocation", "/tmp/checkpoints/cassandra")
+            #     .option("keyspace", "fraud_analytics")
+            #     .option("table", "predictions2")
+            #     .outputMode("append")
+            #     .trigger(processingTime="5 seconds")
+            #     .start()
+            # )
 
             # kafka_stream_3 = (
             #     self.spark.readStream.format("kafka")
@@ -545,56 +550,37 @@ class FraudDetectionPipeline:
             #     .option("startingOffsets", "earliest")
             #     .load()
             # )
-            parsed_stream = kafka_stream_3.select(
-                from_json(col("value").cast("string"), self.schema3).alias("parsed_data")
-            ).select("parsed_data.*")
-            feature_vector = self.create_feature_vector3(parsed_stream)
-            predictions = self.model3.transform(feature_vector)
-            cassandra_stream = predictions.select(
-                uuid_udf().alias("id"),
-                "transaction_id",
-                "type",
-                col("amount").cast("double").alias("amount"),
-                col("nameOrig").alias("nameOrig"),
-                col("nameDest").alias("nameDest"),
-                (col("prediction") > 0.5).cast("boolean").alias("fraud"),
-                col("prediction").cast("int").alias("prediction"),
-                col("probability").getItem(1).cast("float").alias("fraud_probability")
-            )
-            query = cassandra_stream.writeStream \
-                .format("org.apache.spark.sql.cassandra") \
-                .option("checkpointLocation", "/tmp/checkpoints/cassandra") \
-                .option("keyspace", "fraud_analytics") \
-                .option("table", "predictions3") \
-                .outputMode("append") \
-                .trigger(processingTime="5 seconds") \
-                .start()
+            # parsed_stream = kafka_stream_3.select(
+            #     from_json(col("value").cast("string"), self.schema3).alias(
+            #         "parsed_data"
+            #     )
+            # ).select("parsed_data.*")
+            # train_data3 = self.preprocess_dataset3(parsed_stream)
+            # feature_vector = self.create_feature_vector3(train_data3)
+            # predictions = self.model3.transform(feature_vector)
 
-            
+            # cassandra_stream = predictions.select(
+            #     uuid_udf().alias("id"),
+            #     (col("fraud") == 1).cast("boolean").alias("fraud"),
+            #     col("customer_id").alias("customer_id"),
+            #     get_fraud_prob("probability").alias("fraud_probability"),
+            # )
+            # query = (
+            #     cassandra_stream.writeStream.format("org.apache.spark.sql.cassandra")
+            #     .option("checkpointLocation", "/tmp/checkpoints/cassandra")
+            #     .option("keyspace", "fraud_analytics")
+            #     .option("table", "predictions3")
+            #     .outputMode("append")
+            #     .trigger(processingTime="5 seconds")
+            #     .start()
+            # )
+
             self.logger.info("Successfully created Kafka streams")
 
             # joined_stream = kafka_stream_1.join(kafka_stream_2, ["topic"]).join(
             #     kafka_stream_3, ["topic"]
             # )
             # self.logger.info("Successfully joined Kafka streams")
-
-            # streaming_query_dataset1 = kafka_stream_1.writeStream.foreachBatch(
-            #     lambda batch_df, batch_id: process_kafka_dataset1_messages(
-            #         batch_df, batch_id, self.model1, self.schema1, self.logger
-            #     )
-            # ).start()
-
-            # streaming_query_dataset2 = kafka_stream_2.writeStream.foreachBatch(
-            #     lambda batch_df, batch_id: process_kafka_dataset2_messages(
-            #         batch_df, batch_id, self.model2, self.schema2, self.logger
-            #     )
-            # ).start()
-
-            # streaming_query_dataset3 = kafka_stream_3.writeStream.foreachBatch(
-            #     lambda batch_df, batch_id: process_kafka_dataset3_messages(
-            #         batch_df, batch_id, self.model3, self.schema3, self.logger
-            #     )
-            # ).start()
 
             # streaming_query = joined_stream.writeStream.foreachBatch(
             #     lambda batch_df, batch_id: process_kafka_messages(
@@ -605,9 +591,6 @@ class FraudDetectionPipeline:
             self.logger.info("Started processing Kafka messages")
 
             # streaming_query.awaitTermination()
-            # streaming_query_dataset1.awaitTermination()
-            # streaming_query_dataset2.awaitTermination()
-            # streaming_query_dataset3.awaitTermination()
 
             self.logger.info("Stopped processing Kafka messages")
 
@@ -765,8 +748,6 @@ def process_kafka_dataset1_messages(batch_df, batch_id, model, schema1, logger):
     rows = batch_df.collect()
 
     logger.info(f"Processing batch {batch_id}")
-
-
 
     for row in rows:
         process_row_from_dataset_1(row, model, schema1, logger)
