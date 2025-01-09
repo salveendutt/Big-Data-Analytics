@@ -511,6 +511,7 @@ class FraudDetectionPipeline:
                 .trigger(processingTime="5 seconds")
                 .start()
             )
+            
 
             # kafka_stream_2 = (
             #     self.spark.readStream.format("kafka")
