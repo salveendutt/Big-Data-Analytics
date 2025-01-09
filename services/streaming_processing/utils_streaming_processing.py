@@ -451,26 +451,28 @@ class FraudDetectionPipeline:
             self.logger.error(f"Error saving prediction to Cassandra: {str(e)}")
 
     def process_messages(self):
-        """Process messages from all Kafka topics"""
+        """Create Spark streams and join them"""
         try:
             ssc = StreamingContext(self.spark.sparkContext, 10)
+            streams = []
+            for topic in config.kafka_topics:
+                kafka_stream = KafkaUtils.createDirectStream(
+                    ssc,
+                    [topic],
+                    {
+                        "bootstrap.servers": config.kafka_address,
+                        "group.id": f"fraud-detection-group-{topic}",
+                        "key.deserializer": "org.apache.kafka.common.serialization.StringDeserializer",
+                        "value.deserializer": "org.apache.kafka.common.serialization.StringDeserializer",
+                    },
+                )
+                streams.append(kafka_stream)
+            joined_stream = ssc.union(*streams)
 
-            kafka_stream = KafkaUtils.createDirectStream(
-                ssc,
-                [topic for topic in config.kafka_topics],
-                {
-                    "bootstrap.servers": config.kafka_address,
-                    "group.id": "fraud-detection-group",
-                    "key.deserializer": "org.apache.kafka.common.serialization.StringDeserializer",
-                    "value.deserializer": "org.apache.kafka.common.serialization.StringDeserializer",
-                },
-            )
-
-            kafka_stream.foreachRDD(
+            joined_stream.foreachRDD(
                 lambda rdd: self.process_kafka_messages(rdd.collect())
             )
 
-            # Start the Spark Streaming Context
             ssc.start()
             ssc.awaitTermination()
 
