@@ -58,7 +58,7 @@
     \end{flushright}
     \vfill
     % \break
-    {\large Warsaw 2024\par}
+    {\large Warsaw 2025\par}
     \vspace{1cm}
 \end{titlepage}
 
@@ -122,9 +122,18 @@ Due to strict security regulations on personal and financial data, it is challen
 \caption{Data sources}
 \end{table}
 
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.7\textwidth]{images/fraud-distribution.png}
+    \caption{Fraud distribution across datasets}
+    \label{fig:fraudDistribution}
+\end{figure}
+
 Data-streaming API was implemented from scratch. The assumption was that it would use the above datasets; with a specified time frame, it would choose a random transaction not used for training and push it for further processing. The probability of a fraudulent transaction will be set manually to some high enough constant value for testing purposes. A detailed description of the implemented streaming API can be found in Chapter 3.
 
 The content of the datasets is exceptionally different, which makes it impossible to combine them into a single dataset. Therefore, each dataset will be treated separately for streaming and ML training.
+
+Complete Exploratory Data Analysis can be found in the 'eda' subfolder of our repository. In the report we included fraud distribution and the amount distribution for each dataset where applicable.
 
 
 \subsection{Fraudulent Transactions Data (Kaggle)}
@@ -171,6 +180,13 @@ The following transformation should be done to pass the dataset to the ML models
 
 Generally, the dataset and clean and structured, no other preprocessing, except for the described above is necessary. The potential issue is that it is highly unbalanced (less than 1\% of fraud transactions) and contains quite a small number of features (6) for model training. 
 
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.7\textwidth]{images/amount1.png}
+    \caption{Amount distribution of dataset 1}
+    \label{fig:amount1}
+\end{figure}
+
 
 \subsection{Credit Card Fraud (OpenML)}
 
@@ -205,6 +221,12 @@ This dataset captures transaction patterns and behaviors that could indicate pot
 The whole dataset is in the numeric form. Therefore, no additional preprocessing is necessary. The only transformation is to rename the target variable to 'isFraud' to match the format of other datasets.
 The target feature balance is much better than the previous dataset: 8.7\% of fraud. An additional complication is that the feature 'amount' is not available. A ratio to the median purchase of the same customer is provided instead.
 
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.7\textwidth]{images/amount2.png}
+    \caption{Amount distribution of dataset 2}
+    \label{fig:amount2}
+\end{figure}
 
 \subsection{Credit Card Transactions Synthetic Data Generation (Kaggle)}
 
@@ -254,6 +276,12 @@ Like other datasets, it is quite unbalanced, with 3\% of fraudulent transactions
     \item transaction data itself contains only customer ID. Therefore, an additional step is to find the customer and add related features to the output.
 \end{enumerate}
 
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.7\textwidth]{images/amount3.png}
+    \caption{Amount distribution of dataset 3}
+    \label{fig:amount3}
+\end{figure}
 
 \subsection{Credit Card Fraud Detection (Kaggle)}
 
@@ -370,7 +398,7 @@ Additionally, we will use Apache Cassandra to store prepared views for fast quer
 
 \section{Project architecture}
 
-The project is implemented based on Lambda Architecture. The main data processing is be divided into three layers:
+The project is implemented based on Lambda Architecture. The main data processing is divided into three layers:
 
 \begin{enumerate}
     \item Speed Layer (streaming)
@@ -411,8 +439,27 @@ The following Big Data platforms will be used:
 \end{itemize}
 
 \section{Speed Layer}
-TODO: What do we do in streaming processing currently?
 
+Stream processing container is responsible for two main tasks: model training and messages processing. 
+
+At the moment we have tested 4 models for the fraud detection and selected Random Forest as it provided better performance on all of the datasets. Comparison of the model's performance are provided in the table below including metrics precision (P) and recall (R).
+
+\begin{table}[h!]
+\centering
+\begin{tabular}{|l|l|l|l|l|}
+\hline
+\textbf{}         & \textbf{LogisticRegression} & \textbf{GaussianNB} & \textbf{GradientBoosting} & \textbf{RandomForest} \\ \hline
+\textbf{Dataset 1} & P: 0.35; R: 0.44           & P: 0.04; R: 0.18     & P: 0.9; R: 0.41           & \textbf{P: 0.97; R: 0.77}      \\ \hline
+\textbf{Dataset 2} & P: 0.89; R: 0.58           & P: 0.79; R: 0.59     & P: 1.0; R: 0.99           & \textbf{P: 1.0; R: 0.99}       \\ \hline
+\textbf{Dataset 3} & P: 0.0; R: 0.0             & P: 0.48; R: 0.1      & P: 1.0; R: 1.0            & \textbf{P: 1.0; R: 1.0}        \\ \hline
+\end{tabular}
+\caption{Performance metrics of fraud detection models}
+\label{tab:metrics}
+\end{table}
+
+On the container start the model training is performed on the train subset of the 3 datasets. This solution requires quite a lot of hardware resources. Therefore, we are planning to exlude this step for the Milestone 4, and load a pre-trained in advance model instead.
+
+As the next step, Apache Spark starts to read 3 Kafka topics for the incoming messages. If any messages occur, the data is preprocessed and send to the model for prediction. Resulted fraud probabilites are sent to the Cassandra for later use.
 
 \section{Batch Layer}
 TODO - what do we do in batch processing currently?
