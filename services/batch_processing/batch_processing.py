@@ -1,6 +1,5 @@
 import time
 import logging
-
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import (
     count,
@@ -24,27 +23,32 @@ from utils_batch_processing import (
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+
 # Defining all the views
 def create_fraud_by_type_view(df):
     """Calculate fraud statistics by transaction type."""
-    return (df.groupBy("type")
-            .agg(
-                count("*").alias("total_transactions"),
-                sum(when(col("isFraud") == 1, 1).otherwise(0)).alias("total_fraudulent"),
-                avg("amount").alias("avg_amount"),
-            )
-            .withColumn("fraud_rate", col("total_fraudulent") / col("total_transactions")))
+    return (
+        df.groupBy("type")
+        .agg(
+            count("*").alias("total_transactions"),
+            sum(when(col("isFraud") == 1, 1).otherwise(0)).alias("total_fraudulent"),
+            avg("amount").alias("avg_amount"),
+        )
+        .withColumn("fraud_rate", col("total_fraudulent") / col("total_transactions"))
+    )
+
 
 def create_fraud_by_amount_view(df):
     """Calculate fraud statistics by amount ranges."""
-    return (df.withColumn(
+    return (
+        df.withColumn(
             "amount_bucket",
             when(col("amount") <= 1000, "0-1000")
             .when(col("amount") <= 10000, "1000-10000")
             .when(col("amount") <= 50000, "10000-50000")
             .when(col("amount") <= 100000, "50000-100000")
             .when(col("amount") <= 500000, "100000-500000")
-            .otherwise("500000+")
+            .otherwise("500000+"),
         )
         .groupBy("amount_bucket")
         .agg(
@@ -52,7 +56,9 @@ def create_fraud_by_amount_view(df):
             sum(when(col("isFraud") == 1, 1).otherwise(0)).alias("total_fraudulent"),
             avg("amount").alias("avg_amount"),
         )
-        .withColumn("fraud_rate", col("total_fraudulent") / col("total_transactions")))
+        .withColumn("fraud_rate", col("total_fraudulent") / col("total_transactions"))
+    )
+
 
 def create_hourly_stats_view(df):
     """Calculate hourly fraud statistics."""
@@ -62,16 +68,23 @@ def create_hourly_stats_view(df):
         avg("amt").alias("avg_amount"),
     )
 
+
 def create_customer_risk_view(df):
     """Analyze high-risk customers."""
-    return (df.groupBy("customer_id")
-            .agg(
-                count("*").alias("total_transactions"),
-                sum(when(col("fraud") == 1, 1).otherwise(0)).alias("fraudulent_transactions"),
-                sum("amt").alias("total_amount"),
-            )
-            .withColumn("fraud_rate", col("fraudulent_transactions") / col("total_transactions"))
-            .filter(col("total_transactions") >= 5))
+    return (
+        df.groupBy("customer_id")
+        .agg(
+            count("*").alias("total_transactions"),
+            sum(when(col("fraud") == 1, 1).otherwise(0)).alias(
+                "fraudulent_transactions"
+            ),
+            sum("amt").alias("total_amount"),
+        )
+        .withColumn(
+            "fraud_rate", col("fraudulent_transactions") / col("total_transactions")
+        )
+        .filter(col("total_transactions") >= 5)
+    )
 
 
 def create_and_save_views(spark: SparkSession, cassandra_session):
@@ -86,7 +99,13 @@ def create_and_save_views(spark: SparkSession, cassandra_session):
                 fraud_by_type,
                 cassandra_session,
                 "fraud_by_transaction_type",
-                ("type", "total_transactions", "total_fraudulent", "avg_amount", "fraud_rate")
+                (
+                    "type",
+                    "total_transactions",
+                    "total_fraudulent",
+                    "avg_amount",
+                    "fraud_rate",
+                ),
             )
 
             # Fraud by amount view
@@ -95,7 +114,13 @@ def create_and_save_views(spark: SparkSession, cassandra_session):
                 fraud_by_amount,
                 cassandra_session,
                 "fraud_by_amount_bucket",
-                ("amount_bucket", "total_transactions", "total_fraudulent", "avg_amount", "fraud_rate")
+                (
+                    "amount_bucket",
+                    "total_transactions",
+                    "total_fraudulent",
+                    "avg_amount",
+                    "fraud_rate",
+                ),
             )
 
         # Process Dataset 3
@@ -107,7 +132,7 @@ def create_and_save_views(spark: SparkSession, cassandra_session):
                 hourly_stats,
                 cassandra_session,
                 "hourly_fraud_stats",
-                ("hour", "total_transactions", "total_fraudulent", "avg_amount")
+                ("hour", "total_transactions", "total_fraudulent", "avg_amount"),
             )
 
             # Customer risk view
@@ -116,7 +141,13 @@ def create_and_save_views(spark: SparkSession, cassandra_session):
                 customer_stats,
                 cassandra_session,
                 "high_risk_customers",
-                ("customer_id", "total_transactions", "fraudulent_transactions", "total_amount", "fraud_rate")
+                (
+                    "customer_id",
+                    "total_transactions",
+                    "fraudulent_transactions",
+                    "total_amount",
+                    "fraud_rate",
+                ),
             )
 
     except Exception as e:
@@ -128,21 +159,17 @@ if __name__ == "__main__":
 
     while True:
         try:
-            # Create Cassandra session
             cassandra_session = create_cassandra_session()
             if cassandra_session is None:
                 raise Exception("Failed to connect to Cassandra")
 
-            # Create and save views
             create_and_save_views(spark, cassandra_session)
             logger.info("Successfully updated views in Cassandra")
 
-            # Close Cassandra connection
             cassandra_session.shutdown()
 
-            # Sleep for 5 minutes before next batch
             time.sleep(300)
 
         except Exception as e:
             logger.error(f"Error in batch processing: {str(e)}")
-            time.sleep(60)  # Wait a minute before retrying on error
+            time.sleep(60)

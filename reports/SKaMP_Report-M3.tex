@@ -410,109 +410,14 @@ The following Big Data platforms will be used:
     \item Apache Superset (to be agreed with the supervisor): for data analysis on the user interface. If the service is not approved, UI will be implemented from scratch using a JS framework, e.g., React.
 \end{itemize}
 
-\section{Planned ML Tasks}
+\section{Speed Layer}
+TODO: What do we do in streaming processing currently?
 
-This section explores potential machine learning tasks that could be applied to the available fraud and anomaly detection datasets. The primary focus will be identifying fraudulent transactions, developing anomaly detection models, and leveraging data-driven insights for effective fraud management. 
 
-\subsection{Fraud Detection}
-Fraud detection is a key use case for the provided datasets, where the goal is to classify transactions as fraudulent or legitimate. This can be achieved using various supervised learning techniques. Fraudulent transactions are typically rare, so special care must be taken to handle the class imbalance. Planned steps include:
-\begin{itemize}
-    \item \textbf{Model Selection:} Applying binary classification models such as Logistic Regression, Random Forest, Gradient Boosted Trees (e.g., XGBoost, LightGBM), and Neural Networks. These models will be trained to predict the `isFraud` label in the datasets.
-    \item \textbf{Evaluation Metrics:} Since fraud detection deals with imbalanced data, standard metrics such as accuracy are insufficient. Precision, recall, F1-score, and the area under the Precision-Recall curve (AUC-PR) will be used to evaluate model performance.
-    \item \textbf{Imbalanced Data Handling:} Techniques such as SMOTE (Synthetic Minority Oversampling Technique), undersampling, or cost-sensitive learning will be explored to address class imbalance.
-\end{itemize}
+\section{Batch Layer}
+TODO - what do we do in batch processing currently?
 
-\subsection{Anomaly Detection}
-Anomaly detection is complementary to supervised fraud detection, focusing on identifying unusual transactions that deviate significantly from normal behavior. This approach is beneficial for uncovering previously unseen fraud patterns. Proposed methods include:
-\begin{itemize}
-    \item \textbf{Unsupervised Learning:} Techniques like Isolation Forests, k-means clustering, and DBSCAN will be applied to identify anomalous transactions based on transaction features. 
-    \item \textbf{Autoencoders:} Neural network-based autoencoders will be used to reconstruct transaction data, with high reconstruction errors indicating potential anomalies.
-    \item \textbf{Density Estimation:} Probabilistic models such as Gaussian Mixture Models (GMM) will be employed to estimate the likelihood of transactions and flag those with low likelihoods as anomalies.
-    \item \textbf{Validation:} Anomalies detected by these methods will be cross-validated against the `isFraud` label to evaluate their effectiveness.
-\end{itemize}
 
-% \subsection{Customer Profiling and Behavioral Analysis}
-% The synthetic dataset containing customer and terminal profiles provides an opportunity to perform behavioral analysis and create risk profiles. Proposed tasks include:
-% \begin{itemize}
-%     \item \textbf{Customer Segmentation:} Clustering techniques (e.g., k-means, hierarchical clustering) will be applied to group customers based on transaction behaviors, identifying high-risk segments.
-%     \item \textbf{Terminal Risk Scoring:} Anomaly detection models will identify terminals frequently involved in unusual or fraudulent transactions.
-%     \item \textbf{Feature Engineering:} Time-based features (e.g., transaction frequency, average transaction amount over time) will be derived for deeper behavioral insights.
-% \end{itemize}
-
-\section{Planned batch and stream processing}
-
-This chapter describes the planned implementation of batch and stream processing flows in detail as part of the Lambda Architecture outlined in the previous section.
-
-\subsection{Batch Processing Workflow}
-Batch processing will focus on historical data analysis, feature engineering, and machine learning model training. The workflow for batch processing is as follows:
-
-\begin{enumerate}
-    \item Data Ingestion:
-        \begin{itemize}
-            \item Periodic ingestion of historical transactions from data storage sources (Apache Hive).
-            \item Data preprocessing to validate and filter incomplete or invalid entries.
-            \item Aggregation of transactional data for customer-level or terminal-level insights.
-        \end{itemize}
-    \item Data Transformation:
-        \begin{itemize}
-            \item Transformation of raw transaction data into structured formats suitable for ML model training.
-            \item Feature engineering, such as creating rolling statistics (e.g., transaction frequency, average amount per customer, or terminal-specific patterns).
-        \end{itemize}
-    \item Model Training:
-        \begin{itemize}
-            \item Training ML models using the preprocessed data with a fixed schedule (e.g., every 30 minutes or daily, depending on model requirements).
-            \item Storing the trained models in a model repository for use in the serving and streaming layers.
-        \end{itemize}
-\end{enumerate}
-
-\subsection{Stream Processing Workflow}
-The stream processing layer will handle real-time fraud detection and serve as the system's speed layer. The workflow for stream processing is as follows:
-
-\begin{enumerate}
-    \item Data Ingestion:
-        \begin{itemize}
-            \item Continuous ingestion of live transaction data via Apache Kafka.
-            \item Real-time preprocessing, including feature transformation (e.g., converting categorical variables, handling missing values).
-        \end{itemize}
-    \item Real-Time Fraud Detection:
-        \begin{itemize}
-            \item Use of trained ML models to perform predictions on incoming transactions.
-            \item Updating fraud detection logic dynamically as new models are trained in the batch layer.
-        \end{itemize}
-    \item Event Streaming:
-        \begin{itemize}
-            \item Streaming results to MongoDB or another serving layer for downstream consumption.
-            \item Flagging suspicious transactions for further analysis.
-        \end{itemize}
-\end{enumerate}
-
-\subsection{Serving Layer Workflow}
-The serving layer will provide a unified view of real-time and batch-processed data and offer tools for decision-making. The workflow is as follows:
-
-\begin{enumerate}
-    \item Unified Data Storage:
-        \begin{itemize}
-            \item Apache Cassandra will be the primary storage for batch and real-time data, enabling fast querying and retrieval.
-        \end{itemize}
-    \item Client Interfaces:
-        \begin{itemize}
-            \item Interfaces for visualizing flagged transactions in real-time.
-            \item Fraud management tools to allow users to accept or block flagged transactions.
-        \end{itemize}
-    \item Data Visualization:
-        \begin{itemize}
-            \item Customizable dashboards for exploring transaction patterns, fraud rates, and model performance.
-            \item Apache Superset will be evaluated as the primary visualization tool; if not approved, a custom solution will be implemented using React.
-        \end{itemize}
-\end{enumerate}
-
-\subsection{Integration of Batch and Stream Processing}
-The Lambda Architecture ensures seamless integration between the batch and stream processing layers:
-\begin{itemize}
-    \item ML models trained in the batch layer will be deployed to the stream processing layer for real-time fraud detection.
-    \item Features engineered in the batch layer can inform the design of streaming features to ensure consistency.
-    \item The serving layer will present a unified view of historical and real-time data, enabling holistic decision-making.
-\end{itemize}
 
 \section{Planned way of presenting the results}
 
