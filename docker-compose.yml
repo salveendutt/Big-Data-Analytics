@@ -7,13 +7,8 @@ services:
       - "8443:8443"
     environment:
       NIFI_WEB_HTTPS_PORT: 8443
-      # NIFI_CLUSTER_IS_NODE: 'false'
-      # NIFI_ELECTION_MAX_WAIT: '1 min'
     depends_on:
-      # - cassandra
-      # - zookeeper
       - streaming_simulation
-      # - kafka
       - namenode
       - datanode
     networks:
@@ -22,14 +17,10 @@ services:
     volumes:
       - ./services/nifi/conf:/opt/nifi/nifi-current/conf
       - ./services/hadoop/config:/opt/hadoop/conf
-    #   - ./services/nifi/nar_extensions:/opt/nifi/nifi-current/nar_extensions
-    #   - ./services/nifi/extensions:/opt/nifi/nifi-current/extensions
     
 
   streaming_simulation:
     build:
-      # context: ./services/streaming_simulation
-      # dockerfile: Dockerfile
       context: .
       dockerfile: ./services/streaming_simulation/Dockerfile
     container_name: streaming_simulation
@@ -42,8 +33,6 @@ services:
 
   batch_processing:
     build:
-      # context: ./services/batch_processing
-      # dockerfile: Dockerfile
       context: .
       dockerfile: ./services/batch_processing/Dockerfile
     container_name: batch_processing
@@ -54,13 +43,10 @@ services:
       - "5002:5002"
     depends_on:
       - cassandra
-
     restart: unless-stopped
 
   streaming_processing:
     build:
-      # context: ./services/streaming_processing
-      # dockerfile: Dockerfile
       context: .
       dockerfile: ./services/streaming_processing/Dockerfile
     container_name: streaming_processing
@@ -139,7 +125,6 @@ services:
     volumes:
       - cassandra_data:/var/lib/cassandra/data
       - ./services/cassandra/init-cql:/docker-entrypoint-initdb.d
-    #   - ./services/cassandra/cassandra/data:/var/lib/cassandra/data  
 
   kafka:
     image: confluentinc/cp-kafka:7.8.0
