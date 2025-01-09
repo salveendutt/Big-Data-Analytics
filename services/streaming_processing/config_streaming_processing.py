@@ -1,10 +1,13 @@
-kafka_address = "192.168.1.105:9092"
+kafka_address = "kafka:9092"
 kafka_topics = ["dataset1", "dataset2", "dataset3"]
 kafka_connection_attempts = 10
 kafka_connection_attempts_delay = 60
 kafka_topic_processed = "processed_messages"
-spark_master_address = "spark://192.168.1.109:7077"
-spark_jars_packages = "org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.3,org.apache.kafka:kafka-clients:3.2.3"
+spark_master_address = "spark://spark-master:7077"
+spark_jars_packages = "org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.3,org.apache.kafka:kafka-clients:3.2.3,com.datastax.spark:spark-cassandra-connector_2.12:3.0.0"
 cassandra_username = "cassandra"
 cassandra_password = "cassandra"
 cassandra_keyspace = "fraud_analytics"
+cassandra_connection_attempts = 10
+cassandra_connection_attempts_delay = 60
+cassandra_address = "cassandra:9042"

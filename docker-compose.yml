@@ -55,10 +55,6 @@ services:
         ipv4_address: 192.168.1.108
     ports:
       - "5003:5003"
-    depends_on:
-      - kafka
-      - nifi
-      - spark-master
 
   spark-master:
     image: bitnami/spark:3.5.3
@@ -125,6 +121,7 @@ services:
     volumes:
       - cassandra_data:/var/lib/cassandra/data
       - ./services/cassandra/init-cql:/docker-entrypoint-initdb.d
+
 
   kafka:
     image: confluentinc/cp-kafka:7.8.0

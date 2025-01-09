@@ -59,3 +59,37 @@ CREATE TABLE IF NOT EXISTS real_time_predictions (
     model_version text,
     PRIMARY KEY (transaction_id)
 );
+
+
+
+CREATE TABLE predictions1 (
+    id UUID,
+    transaction_id TEXT,
+    fraud BOOLEAN,
+    prediction INT,
+    fraud_probability FLOAT,
+    customer_id TEXT,
+    PRIMARY KEY (id)
+);
+
+
+CREATE TABLE predictions2 (
+    id UUID,
+    fraud BOOLEAN,
+    prediction INT,
+    fraud_probability FLOAT,
+    PRIMARY KEY (id)
+);
+
+CREATE TABLE predictions3 (
+    id UUID,
+    transaction_id TEXT,
+    type TEXT,
+    amount DOUBLE,
+    nameOrig TEXT,
+    nameDest TEXT,
+    fraud BOOLEAN,
+    prediction INT,
+    fraud_probability FLOAT,
+    PRIMARY KEY (id)
+);

@@ -6,7 +6,7 @@ COPY ./services/streaming_simulation /app
 
 COPY ./datasets /app
 
-RUN pip install --no-cache-dir -r streaming-requirements.txt
+RUN --mount=type=cache,target=/root/.cache/pip pip install -r streaming-requirements.txt
 
 ENV FLASK_APP=app.py
 

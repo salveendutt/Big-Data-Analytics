@@ -11,9 +11,9 @@ WORKDIR /app
 
 COPY ./services/streaming_processing /app
 
-COPY ./datasets /app/datasets
+# COPY ./datasets /app/datasets
 
-RUN pip install --no-cache-dir -r streaming_processing_requirements.txt
+RUN --mount=type=cache,target=/root/.cache/pip pip install -r streaming_processing_requirements.txt
 
 LABEL Name="streaming_processing"
 
