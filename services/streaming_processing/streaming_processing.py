@@ -615,8 +615,13 @@ class FraudDetectionPipeline:
         try:
             # Generate training data
             training_df1 = pd.read_csv("./datasets/Fraud.csv")
-            training_data1, _ = train_test_split(training_df1, test_size=0.9999, random_state=2025, stratify=training_df1['isFraud'])
-            training_data1 = training_data1.to_dict(orient='records')
+            training_data1, _ = train_test_split(
+                training_df1,
+                test_size=0.9999,
+                random_state=2025,
+                stratify=training_df1["isFraud"],
+            )
+            training_data1 = training_data1.to_dict(orient="records")
             self.logger.info("Dataset1 is loaded")
 
             training_data2 = [
