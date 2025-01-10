@@ -86,6 +86,8 @@ class FraudDetectionPipeline:
                 StructField("year", StringType()),
                 StructField("month", StringType()),
                 StructField("day", StringType()),
+                StructField("hour", StringType()),
+                StructField("minute", StringType()),
                 StructField("step", IntegerType()),
                 StructField("type", StringType()),
                 StructField("amount", FloatType()),
@@ -105,6 +107,8 @@ class FraudDetectionPipeline:
                 StructField("year", StringType()),
                 StructField("month", StringType()),
                 StructField("day", StringType()),
+                StructField("hour", StringType()),
+                StructField("minute", StringType()),
                 StructField("distance_from_home", FloatType()),
                 StructField("distance_from_last_transaction", FloatType()),
                 StructField("fraud", IntegerType()),
@@ -121,6 +125,8 @@ class FraudDetectionPipeline:
                 StructField("year", StringType()),
                 StructField("month", StringType()),
                 StructField("day", StringType()),
+                StructField("hour", StringType()),
+                StructField("minute", StringType()),
                 StructField("amt", FloatType()),
                 StructField("bin", IntegerType()),
                 StructField("customer_id", StringType()),
@@ -396,7 +402,7 @@ class FraudDetectionPipeline:
                 .trigger(processingTime="30 seconds")
                 .start()
             )
-            return query1
+            return query1, kafka_stream_1
         except Exception as e:
             self.logger.error(f"Error processing stream dataset1: {str(e)}")
             raise
@@ -436,7 +442,7 @@ class FraudDetectionPipeline:
                 .trigger(processingTime="30 seconds")
                 .start()
             )
-            return query2
+            return query2, kafka_stream_2
         except Exception as e:
             self.logger.error(f"Error processing stream dataset2: {str(e)}")
             raise
@@ -477,7 +483,7 @@ class FraudDetectionPipeline:
                 .trigger(processingTime="30 seconds")
                 .start()
             )
-            return query3
+            return query3, kafka_stream_3
         except Exception as e:
             self.logger.error(f"Error processing stream dataset3: {str(e)}")
             raise
@@ -485,12 +491,35 @@ class FraudDetectionPipeline:
     def process_messages(self):
         """Create Spark streams and join them"""
         try:
-            self.query2 = self.process_stream_dataset2()
+            self.query2, self.kafka_stream_2 = self.process_stream_dataset2()
             self.logger.info("Started processing Kafka messages for dataset2")
-            self.query3 = self.process_stream_dataset3()
+            self.query3, self.kafka_stream_3 = self.process_stream_dataset3()
             self.logger.info("Started processing Kafka messages for dataset3")
-            self.query1 = self.process_stream_dataset1()
+            self.query1, self.kafka_stream_1 = self.process_stream_dataset1()
             self.logger.info("Started processing Kafka messages for dataset1")
+
+            # Join the streams based on hour and minute
+            joined_stream = (
+                self.kafka_stream_1.withWatermark("timestamp", "10 minutes")
+                .join(
+                    self.kafka_stream_2.withWatermark("timestamp", "10 minutes"),
+                    expr(
+                        "hour(timestamp) == hour(timestamp) AND minute(timestamp) == minute(timestamp)"
+                    ),
+                    "inner",
+                )
+                .join(
+                    self.kafka_stream_3.withWatermark("timestamp", "10 minutes"),
+                    expr(
+                        "hour(timestamp) == hour(timestamp) AND minute(timestamp) == minute(timestamp)"
+                    ),
+                    "inner",
+                )
+            )
+
+            joined_query = (
+                joined_stream.writeStream.format("console").outputMode("append").start()
+            )
 
             self.spark.streams.awaitAnyTermination()
 
