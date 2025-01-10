@@ -509,8 +509,20 @@ class FraudDetectionPipeline:
                 ["hour", "minute"],
             )
 
-            joined_query = (
-                joined_stream.writeStream.format("console").outputMode("append").start()
+            cassandra_stream = joined_stream.select(
+                self.get_uuid().alias("id"),
+                col("transaction_id").alias("transaction_id"),
+                col("customer_id").alias("customer_id"),
+            )
+            query4 = (
+                cassandra_stream.writeStream.format("org.apache.spark.sql.cassandra")
+                .option("queryName", "cassandra-joined-1")
+                .option("checkpointLocation", "/tmp/checkpoints/cassandra/joined1")
+                .option("keyspace", "fraud_analytics")
+                .option("table", "predictions4")
+                .outputMode("append")
+                .trigger(processingTime="30 seconds")
+                .start()
             )
 
             self.spark.streams.awaitAnyTermination()

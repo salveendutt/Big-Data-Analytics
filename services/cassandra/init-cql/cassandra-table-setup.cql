@@ -87,3 +87,12 @@ CREATE TABLE IF NOT EXISTS predictions3 (
     fraud_probability FLOAT,
     PRIMARY KEY (id)
 );
+
+
+
+CREATE TABLE IF NOT EXISTS predictions4 (
+    id UUID,
+    transaction_id TEXT,
+    customer_id TEXT,
+    PRIMARY KEY (id)
+);
