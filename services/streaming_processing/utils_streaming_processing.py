@@ -68,13 +68,10 @@ class FraudDetectionPipeline:
         try:
             return (
                 SparkSession.builder.master(config.spark_master_address)
-                .config(
-                    "spark.sql.warehouse.dir",
-                    "hdfs://namenode:8020/user/hive/warehouse",
-                )
+                .config("spark.sql.warehouse.dir", config.warehouse_dir)
                 .config("spark.sql.streaming.checkpointLocation", "/tmp/checkpoint")
                 .config("spark.jars.packages", config.spark_jars_packages)
-                .config("spark.hadoop.fs.defaultFS", "hdfs://namenode:8020")
+                .config("spark.hadoop.fs.defaultFS", config.default_fs)
                 .config("spark.hadoop.dfs.client.use.datanode.hostname", "true")
                 .config("spark.cassandra.connection.host", config.cassandra_address)
                 .config("spark.cassandra.auth.username", config.cassandra_username)
@@ -502,6 +499,8 @@ class FraudDetectionPipeline:
                 get_fraud_prob("probability").alias("fraud_probability"),
                 col("nameOrig").alias("customer_id"),
             )
+
+
             query = (
                 cassandra_stream.writeStream.format("org.apache.spark.sql.cassandra")
                 .option("checkpointLocation", "/tmp/checkpoints/cassandra")
