@@ -62,7 +62,7 @@ CREATE TABLE IF NOT EXISTS real_time_predictions (
 
 
 
-CREATE TABLE predictions1 (
+CREATE TABLE IF NOT EXISTS predictions1 (
     id UUID,
     transaction_id TEXT,
     fraud BOOLEAN,
@@ -73,14 +73,14 @@ CREATE TABLE predictions1 (
 );
 
 
-CREATE TABLE predictions2 (
+CREATE TABLE IF NOT EXISTS predictions2 (
     id UUID,
     fraud BOOLEAN,
     prediction INT,
     fraud_probability FLOAT,
     PRIMARY KEY (id)
 );
-CREATE TABLE predictions3 (
+CREATE TABLE IF NOT EXISTS predictions3 (
     id UUID,
     fraud BOOLEAN,
     customer_id TEXT,

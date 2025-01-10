@@ -7,10 +7,6 @@ services:
       - "8443:8443"
     environment:
       NIFI_WEB_HTTPS_PORT: 8443
-    depends_on:
-      - streaming_simulation
-      - namenode
-      - datanode
     networks:
       custom_net:
         ipv4_address: 192.168.1.102
@@ -41,8 +37,6 @@ services:
         ipv4_address: 192.168.1.107
     ports:
       - "5002:5002"
-    depends_on:
-      - cassandra
     restart: unless-stopped
 
   streaming_processing:
@@ -79,10 +73,6 @@ services:
     networks:
       custom_net:
         ipv4_address: 192.168.1.109
-    depends_on:
-      - namenode
-      - hive-metastore
-      - zookeeper
 
   spark-worker:
     image: bitnami/spark:3.5.3
@@ -101,8 +91,6 @@ services:
     networks:
       custom_net:
         ipv4_address: 192.168.1.110
-    depends_on:
-      - spark-master
 
   cassandra:
     image: bitnami/cassandra:5.0.2
@@ -126,8 +114,6 @@ services:
   kafka:
     image: confluentinc/cp-kafka:7.8.0
     container_name: kafka
-    depends_on:
-      - zookeeper
     environment:
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://192.168.1.105:9092
@@ -161,8 +147,6 @@ services:
     networks:
       custom_net:
         ipv4_address: 192.168.1.106
-    depends_on:
-      - kafka
 
   namenode:
     image: bde2020/hadoop-namenode:2.0.0-hadoop2.7.4-java8
@@ -193,8 +177,6 @@ services:
       - ./services/hive/hadoop-hive.env
     environment:
       SERVICE_PRECONDITION: "namenode:50070"
-    depends_on:
-      - namenode
     ports:
       - "50075:50075"
     networks:
@@ -214,10 +196,6 @@ services:
       HIVE_CORE_CONF_javax_jdo_option_ConnectionURL: "jdbc:postgresql://hive-metastore/metastore"
       SERVICE_PRECONDITION: "hive-metastore:9083"
       HIVE_SITE_CONF_hive_zookeeper_quorum: "zookeeper:2181"
-    depends_on:
-      - hive-metastore
-      - namenode
-      - zookeeper
     networks:
       custom_net:
         ipv4_address: 192.168.1.117
@@ -236,11 +214,6 @@ services:
       SERVICE_PRECONDITION: "namenode:50070 datanode:50075 hive-metastore-postgresql:5432 zookeeper:2181"
       HIVE_SITE_CONF_hive_zookeeper_quorum: "zookeeper:2181"
     command: /opt/hive/bin/hive --service metastore
-    depends_on:
-      - hive-metastore-postgresql
-      - namenode
-      - datanode
-      - zookeeper
     networks:
       custom_net:
         ipv4_address: 192.168.1.118
@@ -255,8 +228,6 @@ services:
     networks:
       custom_net:
         ipv4_address: 192.168.1.119
-    depends_on:
-      - datanode
 
   superset:
     build:
@@ -276,9 +247,6 @@ services:
     networks:
       custom_net:
         ipv4_address: 192.168.1.110
-    depends_on:
-      - cassandra
-      - presto
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8088/health"]
       interval: 10s
@@ -295,8 +263,6 @@ services:
     networks:
       custom_net:
         ipv4_address: 192.168.1.120
-    depends_on:
-      - cassandra
 
 networks:
   custom_net:
