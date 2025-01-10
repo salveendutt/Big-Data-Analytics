@@ -482,6 +482,7 @@ class FraudDetectionPipeline:
                 .option("subscribe", config.kafka_topics[0])
                 .option("startingOffsets", "earliest")
                 .load()
+                
             )
             parsed_stream = kafka_stream_1.select(
                 from_json(col("value").cast("string"), self.schema1).alias(
@@ -501,15 +502,16 @@ class FraudDetectionPipeline:
             )
 
 
-            query = (
+            query1 = (
                 cassandra_stream.writeStream.format("org.apache.spark.sql.cassandra")
                 .option("checkpointLocation", "/tmp/checkpoints/cassandra")
                 .option("keyspace", "fraud_analytics")
                 .option("table", "predictions1")
                 .outputMode("append")
-                .trigger(processingTime="5 seconds")
                 .start()
             )
+
+            
             
 
             # kafka_stream_2 = (
@@ -591,6 +593,8 @@ class FraudDetectionPipeline:
             self.logger.info("Started processing Kafka messages")
 
             # streaming_query.awaitTermination()
+
+            query1.awaitTermination()
 
             self.logger.info("Stopped processing Kafka messages")
 

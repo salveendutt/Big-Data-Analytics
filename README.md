@@ -8,7 +8,7 @@
 4. Run the notebooks in 'eda' and 'ml_training' folders to preprocess the datasets. It is necessary to have Python installed for this step, preferably 3.13.x
 4. Modify config files if needed
 5. Navigate to 'scripts' folder and run start_containers.bat (alternatively one can run only certain scenarios such as streaming processing flow, data ingestion to hive or batch processing, all scripts are available in the 'scripts' folder)
-6. After a couple of minutes run the post_start.bat in 'scripts' folder. It will create Hive tables and install necessary spark worker dependencies
+6. After a couple of minutes run the post_start.bat in 'scripts' folder. It will create Hive tables.
 6. You should be able to access the services (look at docker-compose for ports and addresses, look at authorization-access-data.json for credentials)
 
 ## Data
