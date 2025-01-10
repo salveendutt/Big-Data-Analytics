@@ -7,6 +7,7 @@ services:
       - "8443:8443"
     environment:
       NIFI_WEB_HTTPS_PORT: 8443
+      JAVA_OPTS: -Xms512m -Xmx2048m
     networks:
       custom_net:
         ipv4_address: 192.168.1.102

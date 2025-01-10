@@ -56,8 +56,7 @@ class FraudDetectionPipeline:
         self.model_version = "latest" if self.model1 else "1.0.0"
 
         self.get_fraud_prob = udf(lambda v: float(v.values[1]), DoubleType())
-        self.get_uuid = udf(lambda v: str(uuid.uuid4()), StringType())
-        
+        self.get_uuid = udf(lambda: str(uuid.uuid4()))
 
     def _initialize_spark(self):
         """Initialize Spark session"""
@@ -363,9 +362,11 @@ class FraudDetectionPipeline:
         try:
             kafka_stream_1 = (
                 self.spark.readStream.format("kafka")
+                .option("queryName", "kafka-dataset-1")
                 .option("kafka.bootstrap.servers", config.kafka_address)
                 .option("subscribe", config.kafka_topics[0])
-                .option("startingOffsets", "earliest")
+                .option("startingOffsets", "latest")
+                .option("failOnDataLoss", "false")
                 .load()
             )
             parsed_stream = kafka_stream_1.select(
@@ -387,11 +388,12 @@ class FraudDetectionPipeline:
 
             query1 = (
                 cassandra_stream.writeStream.format("org.apache.spark.sql.cassandra")
-                .option("checkpointLocation", "/tmp/checkpoints/cassandra")
+                .option("queryName", "cassandra-dataset-1")
+                .option("checkpointLocation", "/tmp/checkpoints/cassandra/dataset1")
                 .option("keyspace", "fraud_analytics")
                 .option("table", "predictions1")
                 .outputMode("append")
-                .trigger(processingTime="5 seconds")
+                .trigger(processingTime="30 seconds")
                 .start()
             )
             return query1
@@ -403,9 +405,11 @@ class FraudDetectionPipeline:
         try:
             kafka_stream_2 = (
                 self.spark.readStream.format("kafka")
+                .option("queryName", "kafka-dataset-2")
                 .option("kafka.bootstrap.servers", config.kafka_address)
                 .option("subscribe", config.kafka_topics[1])
-                .option("startingOffsets", "earliest")
+                .option("startingOffsets", "latest")
+                .option("failOnDataLoss", "false")
                 .load()
             )
             parsed_stream = kafka_stream_2.select(
@@ -424,11 +428,12 @@ class FraudDetectionPipeline:
             )
             query2 = (
                 cassandra_stream.writeStream.format("org.apache.spark.sql.cassandra")
-                .option("checkpointLocation", "/tmp/checkpoints/cassandra")
+                .option("queryName", "cassandra-dataset-2")
+                .option("checkpointLocation", "/tmp/checkpoints/cassandra/dataset2")
                 .option("keyspace", "fraud_analytics")
                 .option("table", "predictions2")
                 .outputMode("append")
-                .trigger(processingTime="5 seconds")
+                .trigger(processingTime="30 seconds")
                 .start()
             )
             return query2
@@ -440,9 +445,11 @@ class FraudDetectionPipeline:
         try:
             kafka_stream_3 = (
                 self.spark.readStream.format("kafka")
+                .option("queryName", "kafka-dataset-3")
                 .option("kafka.bootstrap.servers", config.kafka_address)
                 .option("subscribe", config.kafka_topics[2])
-                .option("startingOffsets", "earliest")
+                .option("startingOffsets", "latest")
+                .option("failOnDataLoss", "false")
                 .load()
             )
             parsed_stream = kafka_stream_3.select(
@@ -462,11 +469,12 @@ class FraudDetectionPipeline:
             )
             query3 = (
                 cassandra_stream.writeStream.format("org.apache.spark.sql.cassandra")
-                .option("checkpointLocation", "/tmp/checkpoints/cassandra")
+                .option("queryName", "cassandra-dataset-3")
+                .option("checkpointLocation", "/tmp/checkpoints/cassandra/dataset3")
                 .option("keyspace", "fraud_analytics")
                 .option("table", "predictions3")
                 .outputMode("append")
-                .trigger(processingTime="5 seconds")
+                .trigger(processingTime="30 seconds")
                 .start()
             )
             return query3
@@ -477,15 +485,14 @@ class FraudDetectionPipeline:
     def process_messages(self):
         """Create Spark streams and join them"""
         try:
-            query1 = self.process_stream_dataset1()
-            query2 = self.process_stream_dataset2()
-            query3 = self.process_stream_dataset3()
+            self.query2 = self.process_stream_dataset2()
+            self.logger.info("Started processing Kafka messages for dataset2")
+            self.query3 = self.process_stream_dataset3()
+            self.logger.info("Started processing Kafka messages for dataset3")
+            self.query1 = self.process_stream_dataset1()
+            self.logger.info("Started processing Kafka messages for dataset1")
 
-            self.logger.info("Started processing Kafka messages")
-
-            query1.awaitTermination()
-            query2.awaitTermination()
-            query3.awaitTermination()
+            self.spark.streams.awaitAnyTermination()
 
             self.logger.info("Stopped processing Kafka messages")
 
@@ -629,6 +636,12 @@ class FraudDetectionPipeline:
             self.logger.error(f"Fatal error in pipeline: {e}")
             raise
         finally:
+            if self.query1:
+                self.query1.stop()
+            if self.query2:
+                self.query2.stop()
+            if self.query3:
+                self.query3.stop()
             if self.spark:
                 self.spark.stop()
 
