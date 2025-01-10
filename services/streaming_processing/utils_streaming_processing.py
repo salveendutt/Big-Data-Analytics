@@ -6,12 +6,14 @@ from pyspark.sql.functions import (
     from_json,
     lit,
     hour,
+    minute,
     to_timestamp,
     concat,
     count,
     avg,
     sum,
     udf,
+    expr,
 )
 from pyspark.sql.types import (
     StructType,
@@ -402,7 +404,7 @@ class FraudDetectionPipeline:
                 .trigger(processingTime="30 seconds")
                 .start()
             )
-            return query1, kafka_stream_1
+            return query1, parsed_stream
         except Exception as e:
             self.logger.error(f"Error processing stream dataset1: {str(e)}")
             raise
@@ -442,7 +444,7 @@ class FraudDetectionPipeline:
                 .trigger(processingTime="30 seconds")
                 .start()
             )
-            return query2, kafka_stream_2
+            return query2, parsed_stream
         except Exception as e:
             self.logger.error(f"Error processing stream dataset2: {str(e)}")
             raise
@@ -483,7 +485,7 @@ class FraudDetectionPipeline:
                 .trigger(processingTime="30 seconds")
                 .start()
             )
-            return query3, kafka_stream_3
+            return query3, parsed_stream
         except Exception as e:
             self.logger.error(f"Error processing stream dataset3: {str(e)}")
             raise
@@ -499,22 +501,12 @@ class FraudDetectionPipeline:
             self.logger.info("Started processing Kafka messages for dataset1")
 
             # Join the streams based on hour and minute
-            joined_stream = (
-                self.kafka_stream_1.withWatermark("timestamp", "10 minutes")
-                .join(
-                    self.kafka_stream_2.withWatermark("timestamp", "10 minutes"),
-                    expr(
-                        "hour(timestamp) == hour(timestamp) AND minute(timestamp) == minute(timestamp)"
-                    ),
-                    "inner",
-                )
-                .join(
-                    self.kafka_stream_3.withWatermark("timestamp", "10 minutes"),
-                    expr(
-                        "hour(timestamp) == hour(timestamp) AND minute(timestamp) == minute(timestamp)"
-                    ),
-                    "inner",
-                )
+            joined_stream = self.kafka_stream_1.join(
+                self.kafka_stream_2,
+                ["hour", "minute"],
+            ).join(
+                self.kafka_stream_3,
+                ["hour", "minute"],
             )
 
             joined_query = (
