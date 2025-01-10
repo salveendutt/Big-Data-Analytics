@@ -56,6 +56,8 @@ class FraudDetectionPipeline:
         self.model_version = "latest" if self.model1 else "1.0.0"
 
         self.get_fraud_prob = udf(lambda v: float(v.values[1]), DoubleType())
+        self.get_uuid = udf(lambda v: str(uuid.uuid4()), StringType())
+        
 
     def _initialize_spark(self):
         """Initialize Spark session"""
@@ -375,7 +377,7 @@ class FraudDetectionPipeline:
             feature_vector = self.create_feature_vector1(train_data1)
             predictions = self.model1.transform(feature_vector)
             cassandra_stream = predictions.select(
-                uuid_udf().alias("id"),
+                self.get_uuid().alias("id"),
                 "transaction_id",
                 (col("prediction") > 0.5).cast("boolean").alias("fraud"),
                 col("prediction").cast("int").alias("prediction"),
@@ -415,7 +417,7 @@ class FraudDetectionPipeline:
             feature_vector = self.create_feature_vector2(train_data2)
             predictions = self.model2.transform(feature_vector)
             cassandra_stream = predictions.select(
-                uuid_udf().alias("id"),
+                self.get_uuid().alias("id"),
                 (col("prediction") > 0.5).cast("boolean").alias("fraud"),
                 col("prediction").cast("int").alias("prediction"),
                 self.get_fraud_prob("probability").alias("fraud_probability"),
@@ -453,7 +455,7 @@ class FraudDetectionPipeline:
             predictions = self.model3.transform(feature_vector)
 
             cassandra_stream = predictions.select(
-                uuid_udf().alias("id"),
+                self.get_uuid().alias("id"),
                 (col("fraud") == 1).cast("boolean").alias("fraud"),
                 col("customer_id").alias("customer_id"),
                 self.get_fraud_prob("probability").alias("fraud_probability"),
