@@ -538,19 +538,24 @@ class FraudDetectionPipeline:
         self.logger.info("Starting Fraud Detection Pipeline...")
 
         try:
-            training_df1 = pd.read_csv("./datasets/train_Fraud.csv")
+            # training_df1 = pd.read_csv("./datasets/train_Fraud.csv")
 
-            training_data1 = training_df1.to_dict(orient="records")
+            # training_data1 = training_df1.to_dict(orient="records")
 
-            training_df2 = pd.read_csv("./datasets/train_Credit_Card_Fraud_.csv")
+            # training_df2 = pd.read_csv("./datasets/train_Credit_Card_Fraud_.csv")
 
-            training_data2 = training_df2.to_dict(orient="records")
+            # training_data2 = training_df2.to_dict(orient="records")
 
-            training_df3 = pd.read_csv("./datasets/train_transactions_df.csv")
+            # training_df3 = pd.read_csv("./datasets/train_transactions_df.csv")
 
-            training_data3 = training_df3.to_dict(orient="records")
+            # training_data3 = training_df3.to_dict(orient="records")
 
-            self.train_models(training_data1, training_data2, training_data3)
+            # self.train_models(training_data1, training_data2, training_data3)
+
+            self.model1 = joblib.load("./models/rf_fraud_model.joblib")
+            self.model2 = joblib.load("./models/rf_credit_card_model.joblib")
+            self.model3 = joblib.load("./models/rf_transactions_model.joblib")
+
             self.process_messages()
 
         except KeyboardInterrupt:
