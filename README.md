@@ -24,15 +24,15 @@ Download from:
 and preferably place unpacked files in the root folder in 'datasets' folder.
 
 Expected structure:
+
 ```
 .  
 ├── datasets  
 │   ├── Fraud.csv // dataset 1: 'Fraudulent Transactions Data' from Kaggle  
 │   └── Credit_Card_Fraud_.arff // dataset 2: 'Credit_Card_Fraud_' from OpenML  
-│   └── 3 // dataset 3: 'Credit Card Transactions Synthetic Data Generation' from Kaggle  
-│   |   └── customer_profiles_table.csv  
-│   |   └── terminal_profiles_table.csv  
-│   |   └── transactions_df.csv  
+│   └── transactions_df.csv // dataset 3: 'Credit Card Transactions Synthetic Data Generation' from Kaggle  
+│   └── customer_profiles_table.csv  
+│   └── terminal_profiles_table.csv   
 │   └── creditcard.csv // dataset 4: 'Credit Card Fraud Detection' from Kaggle (optional)  
 ├── ...  
 ```

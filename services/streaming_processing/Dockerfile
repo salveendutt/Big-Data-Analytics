@@ -13,6 +13,11 @@ COPY ./services/streaming_processing /app
 
 # COPY ./datasets /app/datasets
 
+COPY ./datasets/train_Fraud.csv /app/datasets/train_Fraud.csv
+COPY ./datasets/train_Credit_Card_Fraud_.csv /app/datasets/train_Credit_Card_Fraud_.csv
+COPY ./datasets/train_transactions_df.csv /app/datasets/train_transactions_df.csv
+
+
 RUN --mount=type=cache,target=/root/.cache/pip pip install -r streaming_processing_requirements.txt
 
 LABEL Name="streaming_processing"
