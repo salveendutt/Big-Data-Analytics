@@ -18,6 +18,7 @@ COPY ./services/streaming_processing /app
 # COPY ./datasets/train_transactions_df.csv /app/datasets/train_transactions_df.csv
 
 
+
 RUN --mount=type=cache,target=/root/.cache/pip pip install -r streaming_processing_requirements.txt
 
 LABEL Name="streaming_processing"
