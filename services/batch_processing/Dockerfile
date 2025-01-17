@@ -11,7 +11,7 @@ WORKDIR /app
 
 COPY ./services/batch_processing /app
 
-RUN pip install --no-cache-dir -r batch_processing_requirements.txt
+RUN --mount=type=cache,target=/root/.cache/pip pip install -r batch_processing_requirements.txt
 
 LABEL Name="batch_processing"
 
