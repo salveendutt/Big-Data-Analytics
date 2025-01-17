@@ -6,10 +6,12 @@
 2. Start docker desktop
 3. Download datasets pointed below
 4. Run the notebooks in 'eda' and 'ml_training' folders to preprocess the datasets. It is necessary to have Python installed for this step, preferably 3.13.x
-4. Modify config files if needed
-5. Navigate to 'scripts' folder and run start_containers.bat (alternatively one can run only certain scenarios such as streaming processing flow, data ingestion to hive or batch processing, all scripts are available in the 'scripts' folder)
-6. After a couple of minutes run the post_start.bat in 'scripts' folder. It will create Hive tables.
-6. You should be able to access the services (look at docker-compose for ports and addresses, look at authorization-access-data.json for credentials)
+7. Modify config files if needed - look at the relevant files in the 'services' folder. Default configuration should work out of the box.
+5. Navigate to 'scripts' folder.
+6. Run prepare_datasets_local_pretraining.py and train_local_model.py
+8. Run start_containers.bat (alternatively one can run only certain scenarios such as streaming processing flow, data ingestion to hive or batch processing, all scripts are available in the 'scripts' folder)
+9. After a couple of minutes run the post_start.bat in 'scripts' folder. It will create Hive tables.
+10. You should be able to access the services (look at docker-compose for ports and addresses, look at authorization-access-data.json for credentials)
 
 ## Data
 
