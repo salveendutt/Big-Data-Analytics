@@ -538,127 +538,17 @@ class FraudDetectionPipeline:
         self.logger.info("Starting Fraud Detection Pipeline...")
 
         try:
-            # # Generate training data
-            # training_df1 = pd.read_csv("./datasets/Fraud.csv")
-            # training_data1, _ = train_test_split(
-            #     training_df1,
-            #     test_size=0.9999,
-            #     random_state=2025,
-            #     stratify=training_df1["isFraud"],
-            # )
-            # training_data1 = training_data1.to_dict(orient="records")
-            # self.logger.info("Dataset1 is loaded")
+            training_df1 = pd.read_csv("./datasets/train_Fraud.csv")
 
-            training_data1 = [
-                {
-                    "step": 1,
-                    "type": "TRANSFER",
-                    "amount": 5000.00,
-                    "isFlaggedFraud": 0,
-                    "isFraud": 1,
-                    "nameDest": "C12345678",
-                    "nameOrig": "A98765432",
-                    "newbalanceDest": 10000.00,
-                    "newbalanceOrig": 0.00,
-                    "oldbalanceDest": 5000.00,
-                    "oldbalanceOrg": 5000.00,
-                },
-                {
-                    "step": 2,
-                    "type": "CASH_OUT",
-                    "amount": 2000.00,
-                    "isFlaggedFraud": 0,
-                    "isFraud": 0,
-                    "nameDest": "C23456789",
-                    "nameOrig": "A87654321",
-                    "newbalanceDest": 8000.00,
-                    "newbalanceOrig": 3000.00,
-                    "oldbalanceDest": 6000.00,
-                    "oldbalanceOrg": 5000.00,
-                },
-                {
-                    "step": 2,
-                    "type": "CASH_OUT",
-                    "amount": 2000.00,
-                    "isFlaggedFraud": 0,
-                    "isFraud": 0,
-                    "nameDest": "C23456789",
-                    "nameOrig": "A87654321",
-                    "newbalanceDest": 8000.00,
-                    "newbalanceOrig": 3000.00,
-                    "oldbalanceDest": 6000.00,
-                    "oldbalanceOrg": 5000.00,
-                },
-            ]
+            training_data1 = training_df1.to_dict(orient="records")
 
-            training_data2 = [
-                {
-                    "distance_from_home": 1500.5,
-                    "distance_from_last_transaction": 1489.2,
-                    "ratio_to_median_purchase_price": 10.5,
-                    "repeat_retailer": 0,
-                    "used_chip": 0,
-                    "used_pin_number": 0,
-                    "online_order": 1,
-                    "fraud": 1,
-                },
-                {
-                    "distance_from_home": 3.2,
-                    "distance_from_last_transaction": 0.5,
-                    "ratio_to_median_purchase_price": 1.2,
-                    "repeat_retailer": 1,
-                    "used_chip": 1,
-                    "used_pin_number": 1,
-                    "online_order": 0,
-                    "fraud": 0,
-                },
-                {
-                    "distance_from_home": 2500.0,
-                    "distance_from_last_transaction": 2489.8,
-                    "ratio_to_median_purchase_price": 15.8,
-                    "repeat_retailer": 0,
-                    "used_chip": 0,
-                    "used_pin_number": 0,
-                    "online_order": 1,
-                    "fraud": 1,
-                },
-            ]
+            training_df2 = pd.read_csv("./datasets/train_Credit_Card_Fraud_.csv")
 
-            training_data3 = [
-                {
-                    "amt": 9999.99,
-                    "bin": 123456,
-                    "customer_id": "CUST001",
-                    "entry_mode": "ONLINE",
-                    "fraud": 1,
-                    "fraud_scenario": 1,
-                    "post_ts": "2025-01-04T14:30:00Z",
-                    "terminal_id": "TERM001",
-                    "transaction_id": "TX001",
-                },
-                {
-                    "amt": 250.00,
-                    "bin": 789012,
-                    "customer_id": "CUST002",
-                    "entry_mode": "CHIP",
-                    "fraud": 0,
-                    "fraud_scenario": 0,
-                    "post_ts": "2025-01-04T14:35:00Z",
-                    "terminal_id": "TERM002",
-                    "transaction_id": "TX002",
-                },
-                {
-                    "amt": 15000.00,
-                    "bin": 345678,
-                    "customer_id": "CUST003",
-                    "entry_mode": "ONLINE",
-                    "fraud": 1,
-                    "fraud_scenario": 2,
-                    "post_ts": "2025-01-04T14:40:00Z",
-                    "terminal_id": "TERM003",
-                    "transaction_id": "TX003",
-                },
-            ]
+            training_data2 = training_df2.to_dict(orient="records")
+
+            training_df3 = pd.read_csv("./datasets/train_transactions_df.csv")
+
+            training_data3 = training_df3.to_dict(orient="records")
 
             self.train_models(training_data1, training_data2, training_data3)
             self.process_messages()
