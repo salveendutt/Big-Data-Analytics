@@ -6,12 +6,14 @@ from pyspark.sql.functions import (
     from_json,
     lit,
     hour,
+    minute,
     to_timestamp,
     concat,
     count,
     avg,
     sum,
     udf,
+    expr,
 )
 from pyspark.sql.types import (
     StructType,
@@ -86,6 +88,8 @@ class FraudDetectionPipeline:
                 StructField("year", StringType()),
                 StructField("month", StringType()),
                 StructField("day", StringType()),
+                StructField("hour", StringType()),
+                StructField("minute", StringType()),
                 StructField("step", IntegerType()),
                 StructField("type", StringType()),
                 StructField("amount", FloatType()),
@@ -105,6 +109,8 @@ class FraudDetectionPipeline:
                 StructField("year", StringType()),
                 StructField("month", StringType()),
                 StructField("day", StringType()),
+                StructField("hour", StringType()),
+                StructField("minute", StringType()),
                 StructField("distance_from_home", FloatType()),
                 StructField("distance_from_last_transaction", FloatType()),
                 StructField("fraud", IntegerType()),
@@ -121,6 +127,8 @@ class FraudDetectionPipeline:
                 StructField("year", StringType()),
                 StructField("month", StringType()),
                 StructField("day", StringType()),
+                StructField("hour", StringType()),
+                StructField("minute", StringType()),
                 StructField("amt", FloatType()),
                 StructField("bin", IntegerType()),
                 StructField("customer_id", StringType()),
@@ -396,7 +404,7 @@ class FraudDetectionPipeline:
                 .trigger(processingTime="30 seconds")
                 .start()
             )
-            return query1
+            return query1, parsed_stream
         except Exception as e:
             self.logger.error(f"Error processing stream dataset1: {str(e)}")
             raise
@@ -436,7 +444,7 @@ class FraudDetectionPipeline:
                 .trigger(processingTime="30 seconds")
                 .start()
             )
-            return query2
+            return query2, parsed_stream
         except Exception as e:
             self.logger.error(f"Error processing stream dataset2: {str(e)}")
             raise
@@ -477,7 +485,7 @@ class FraudDetectionPipeline:
                 .trigger(processingTime="30 seconds")
                 .start()
             )
-            return query3
+            return query3, parsed_stream
         except Exception as e:
             self.logger.error(f"Error processing stream dataset3: {str(e)}")
             raise
@@ -485,12 +493,37 @@ class FraudDetectionPipeline:
     def process_messages(self):
         """Create Spark streams and join them"""
         try:
-            self.query2 = self.process_stream_dataset2()
+            self.query2, self.kafka_stream_2 = self.process_stream_dataset2()
             self.logger.info("Started processing Kafka messages for dataset2")
-            self.query3 = self.process_stream_dataset3()
+            self.query3, self.kafka_stream_3 = self.process_stream_dataset3()
             self.logger.info("Started processing Kafka messages for dataset3")
-            self.query1 = self.process_stream_dataset1()
+            self.query1, self.kafka_stream_1 = self.process_stream_dataset1()
             self.logger.info("Started processing Kafka messages for dataset1")
+
+            # Join the streams based on hour and minute
+            joined_stream = self.kafka_stream_1.join(
+                self.kafka_stream_2,
+                ["hour", "minute"],
+            ).join(
+                self.kafka_stream_3,
+                ["hour", "minute"],
+            )
+
+            cassandra_stream = joined_stream.select(
+                self.get_uuid().alias("id"),
+                col("transaction_id").alias("transaction_id"),
+                col("customer_id").alias("customer_id"),
+            )
+            query4 = (
+                cassandra_stream.writeStream.format("org.apache.spark.sql.cassandra")
+                .option("queryName", "cassandra-joined-1")
+                .option("checkpointLocation", "/tmp/checkpoints/cassandra/joined1")
+                .option("keyspace", "fraud_analytics")
+                .option("table", "predictions4")
+                .outputMode("append")
+                .trigger(processingTime="30 seconds")
+                .start()
+            )
 
             self.spark.streams.awaitAnyTermination()
 
