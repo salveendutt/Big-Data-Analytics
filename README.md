@@ -5,6 +5,7 @@
 1. Make sure you have docker and Python (preferably 3.12.7) installed
 2. Start docker desktop
 3. Download datasets pointed below
+3. Install the requirements in requirements.txt
 4. Run the notebooks in 'eda' and 'ml_training' folders to preprocess the datasets. It is necessary to have Python installed for this step, preferably 3.13.x
 7. Modify config files if needed - look at the relevant files in the 'services' folder. Default configuration should work out of the box.
 5. Navigate to 'scripts' folder.
