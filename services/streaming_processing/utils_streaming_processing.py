@@ -553,9 +553,47 @@ class FraudDetectionPipeline:
 
             # self.train_models(training_data1, training_data2, training_data3)
 
-            self.model1 = RandomForestClassifier.load("./models/rf_fraud_model")
-            self.model2 = RandomForestClassifier.load("./models/rf_credit_card_model")
-            self.model3 = RandomForestClassifier.load("./models/rf_transactions_model")
+            base_path = "hdfs://namenode:8020/user/models"
+
+            fs = self.spark._jvm.org.apache.hadoop.fs.FileSystem.get(
+                self.spark._jsc.hadoopConfiguration()
+            )
+            base_path_hdfs = self.spark._jvm.org.apache.hadoop.fs.Path(base_path)
+            if not fs.exists(base_path_hdfs):
+                fs.mkdirs(base_path_hdfs)
+
+            model1_path = f"{base_path}/rf_fraud_model"
+            model2_path = f"{base_path}/rf_credit_card_model"
+            model3_path = f"{base_path}/rf_transactions_model"
+            current_path = os.path.dirname(os.path.abspath(__file__))
+
+            local_model_path = os.path.join(current_path, "models")
+
+            for dir in [
+                "rf_fraud_model",
+                "rf_credit_card_model",
+                "rf_transactions_model",
+            ]:
+                local_dir_path = os.path.join(local_model_path, dir)
+                hdfs_dir_path = os.path.join(base_path, dir)
+                if not fs.exists(
+                    self.spark._jvm.org.apache.hadoop.fs.Path(hdfs_dir_path)
+                ):
+                    fs.mkdirs(self.spark._jvm.org.apache.hadoop.fs.Path(hdfs_dir_path))
+                for root, dirs, files in os.walk(local_dir_path):
+                    for file in files:
+                        file_path = os.path.join(root, file)
+                        dst_path = os.path.join(
+                            hdfs_dir_path, os.path.relpath(file_path, local_dir_path)
+                        )
+                        fs.copyFromLocalFile(
+                            self.spark._jvm.org.apache.hadoop.fs.Path(file_path),
+                            self.spark._jvm.org.apache.hadoop.fs.Path(dst_path),
+                        )
+
+            self.model1 = PipelineModel.load(model1_path)
+            self.model2 = PipelineModel.load(model2_path)
+            self.model3 = PipelineModel.load(model3_path)
 
             self.process_messages()
 
