@@ -2,7 +2,8 @@
 
 ## How to run
 
-1. Make sure you have docker and Python (preferably 3.12.7) installed
+1. Make sure you have docker, Python (preferably 3.12.7) and OPTIONALLY JDK 17 (look at the step below, it is necessary for local model training with Spark) installed
+1. NOTE: It is only needed for local model trainin, models are attached to the repository in the 'services/streaming_processing/models' folder so you don't need to perform this step. Install winutils (if you are running on Windows) for hadoop - https://github.com/steveloughran/winutils/ - place them in C:/hadoop/bin/  Add this folder to PATH and set HADOOP_HOME=C:/hadoop 
 2. Start docker desktop
 3. Download datasets pointed below
 3. Install the requirements in requirements.txt

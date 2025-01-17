@@ -553,9 +553,9 @@ class FraudDetectionPipeline:
 
             # self.train_models(training_data1, training_data2, training_data3)
 
-            self.model1 = joblib.load("./models/rf_fraud_model.joblib")
-            self.model2 = joblib.load("./models/rf_credit_card_model.joblib")
-            self.model3 = joblib.load("./models/rf_transactions_model.joblib")
+            self.model1 = RandomForestClassifier.load("./models/rf_fraud_model")
+            self.model2 = RandomForestClassifier.load("./models/rf_credit_card_model")
+            self.model3 = RandomForestClassifier.load("./models/rf_transactions_model")
 
             self.process_messages()
 
