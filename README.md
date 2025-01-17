@@ -2,7 +2,7 @@
 
 ## How to run
 
-1. Make sure you have docker installed
+1. Make sure you have docker and Python (preferably 3.12.7) installed
 2. Start docker desktop
 3. Download datasets pointed below
 4. Run the notebooks in 'eda' and 'ml_training' folders to preprocess the datasets. It is necessary to have Python installed for this step, preferably 3.13.x
