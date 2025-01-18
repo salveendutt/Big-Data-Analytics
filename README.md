@@ -2,18 +2,18 @@
 
 ## How to run
 
-1. Make sure you have docker, Python (preferably 3.12.7) and OPTIONALLY JDK 17 (look at the step below, it is necessary for local model training with Spark) installed
-1. NOTE: It is only needed for local model trainin, models are attached to the repository in the 'services/streaming_processing/models' folder so you don't need to perform this step. Install winutils (if you are running on Windows) for hadoop - https://github.com/steveloughran/winutils/ - place them in C:/hadoop/bin/  Add this folder to PATH and set HADOOP_HOME=C:/hadoop 
+1. Make sure you have docker, Python (preferably 3.12.7), and OPTIONALLY JDK 17 (look at the step below; it is necessary for local model training with Spark) installed
+1. NOTE: It is only needed for local model training; models are attached to the repository in the 'services/streaming_processing/models' folder, so you don't need to perform this step: Install winutils (if you are running on Windows) for Hadoop - https://github.com/steveloughran/winutils/ - place them in C:/hadoop/bin/  Add this folder to PATH and set HADOOP_HOME=C:/hadoop 
 2. Start docker desktop
-3. Download datasets pointed below
+3. Download the datasets pointed out below
 3. Install the requirements in requirements.txt
-4. Run the notebooks in 'eda' and 'ml_training' folders to preprocess the datasets. It is necessary to have Python installed for this step, preferably 3.13.x
-7. Modify config files if needed - look at the relevant files in the 'services' folder. Default configuration should work out of the box.
-5. Navigate to 'scripts' folder.
-6. Run prepare_datasets_local_pretraining.py and train_local_model.py
-8. Run start_containers.bat (alternatively one can run only certain scenarios such as streaming processing flow, data ingestion to hive or batch processing, all scripts are available in the 'scripts' folder)
-9. After a couple of minutes run the post_start.bat in 'scripts' folder. It will create Hive tables.
-10. You should be able to access the services (look at docker-compose for ports and addresses, look at authorization-access-data.json for credentials)
+4. Run the notebooks in the 'eda' folder to preprocess the datasets
+7. Modify config files if needed - look at the relevant files in the 'services' folder. The default configuration should work out of the box
+5. Navigate to the 'scripts' folder
+6. Run prepare_datasets_local_pretraining.py and train_local_model.py (only if you want to recreate the pre-trained models)
+8. Run start_containers.bat (alternatively, one can run only certain scenarios such as streaming processing flow, data ingestion to hive, or batch processing; all scripts are available in the 'scripts' folder)
+9. After a few minutes, run the post_start.bat in the 'scripts' folder. It will create Hive tables
+10. You should be able to access the services (look at docker-compose for ports and addresses; look at authorization-access-data.json for credentials)
 
 ## Data
 
@@ -25,7 +25,7 @@ Download from:
 
 3. https://www.kaggle.com/datasets/cgrodrigues/credit-card-transactions-synthetic-data-generation?select=transactions_df.csv
 
-and preferably place unpacked files in the root folder in 'datasets' folder.
+And place unpacked files in the root folder in the 'datasets' folder.
 
 Expected structure:
 
