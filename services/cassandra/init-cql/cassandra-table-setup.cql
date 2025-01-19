@@ -71,6 +71,7 @@ CREATE TABLE IF NOT EXISTS predictions1 (
     customer_id TEXT,
     amount FLOAT,
     amount_to_balance_ratio FLOAT,
+    timestamp TIMESTAMP,
     PRIMARY KEY (id)
 );
 
@@ -87,6 +88,7 @@ CREATE TABLE IF NOT EXISTS predictions2 (
     used_chip int,
     used_pin_number int,
     online_order int,
+    timestamp TIMESTAMP,
     PRIMARY KEY (id)
 );
 CREATE TABLE IF NOT EXISTS predictions3 (
@@ -95,6 +97,7 @@ CREATE TABLE IF NOT EXISTS predictions3 (
     customer_id TEXT,
     fraud_probability FLOAT,
     amount FLOAT,
+    timestamp TIMESTAMP,
     PRIMARY KEY (id)
 );
 

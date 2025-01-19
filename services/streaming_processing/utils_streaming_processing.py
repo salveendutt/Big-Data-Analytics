@@ -403,6 +403,7 @@ class FraudDetectionPipeline:
                 col("nameOrig").alias("customer_id"),
                 col("features_array")[0].alias("amount"),
                 col("features_array")[1].alias("amount_to_balance_ratio"),
+                col("timestamp").alias("timestamp"),
             )
 
             query1 = (
@@ -443,6 +444,9 @@ class FraudDetectionPipeline:
                 "features_array",
                 self.vector_to_array("features"),
             )
+            extracted_features = extracted_features.withColumn(
+                "timestamp", current_timestamp()
+            )
             cassandra_stream = extracted_features.select(
                 self.get_uuid().alias("id"),
                 (col("prediction") > 0.5).cast("boolean").alias("fraud"),
@@ -455,6 +459,7 @@ class FraudDetectionPipeline:
                 col("features_array")[4].alias("used_chip"),
                 col("features_array")[5].alias("used_pin_number"),
                 col("features_array")[6].alias("online_order"),
+                col("timestamp").alias("timestamp"),
             )
             query2 = (
                 cassandra_stream.writeStream.format("org.apache.spark.sql.cassandra")
@@ -496,13 +501,17 @@ class FraudDetectionPipeline:
                 "features_array",
                 self.vector_to_array("features"),
             )
-
+            extracted_features = extracted_features.withColumn(
+                "timestamp", current_timestamp()
+            )
+            
             cassandra_stream = extracted_features.select(
                 self.get_uuid().alias("id"),
                 (col("fraud") == 1).cast("boolean").alias("fraud"),
                 col("customer_id").alias("customer_id"),
                 self.get_fraud_prob("probability").alias("fraud_probability"),
                 col("features_array")[0].alias("amount"),
+                col("timestamp").alias("timestamp"),
             )
             query3 = (
                 cassandra_stream.writeStream.format("org.apache.spark.sql.cassandra")
