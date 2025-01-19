@@ -12,7 +12,7 @@
 5. Navigate to the 'scripts' folder
 6. Run prepare_datasets_local_pretraining.py and train_local_model.py (only if you want to recreate the pre-trained models)
 8. Run start_containers.bat (alternatively, one can run only certain scenarios such as streaming processing flow, data ingestion to hive, or batch processing; all scripts are available in the 'scripts' folder)
-9. After a few minutes, run the post_start.bat in the 'scripts' folder. It will create Hive tables
+9. After a few minutes, run the post_start.bat in the 'scripts' folder. It will create Hive tables. Run also the 'import_superset_dashboards.bat' to automatically create the dashboards
 10. You should be able to access the services (look at docker-compose for ports and addresses; look at authorization-access-data.json for credentials)
 
 ## Data
