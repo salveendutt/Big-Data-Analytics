@@ -99,7 +99,6 @@ CREATE TABLE IF NOT EXISTS predictions3 (
 );
 
 
-
 CREATE TABLE IF NOT EXISTS predictions4 (
     id UUID,
     transaction_id TEXT,
