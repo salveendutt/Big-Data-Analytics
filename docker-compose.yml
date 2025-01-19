@@ -243,6 +243,7 @@ services:
     volumes:
       - ./services/superset:/app/pythonpath:ro
       - superset_home:/app/superset_home
+      - ./services/superset/dashboard_export.zip:/app/dashboard_export.zip
     ports:
       - '8088:8088'
     networks:
