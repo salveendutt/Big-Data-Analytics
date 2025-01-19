@@ -23,6 +23,7 @@ from pyspark.sql.types import (
     IntegerType,
     TimestampType,
     DoubleType,
+    ArrayType,
 )
 from pyspark.ml import Pipeline
 from pyspark.ml import PipelineModel
@@ -60,6 +61,9 @@ class FraudDetectionPipeline:
 
         self.get_fraud_prob = udf(lambda v: float(v.values[1]), DoubleType())
         self.get_uuid = udf(lambda: str(uuid.uuid4()))
+        self.vector_to_array = udf(
+            lambda x: x.toArray().tolist(), ArrayType(DoubleType())
+        )
 
     def _initialize_spark(self):
         """Initialize Spark session"""
@@ -386,15 +390,19 @@ class FraudDetectionPipeline:
             train_data1 = self.preprocess_dataset1(parsed_stream)
             feature_vector = self.create_feature_vector1(train_data1)
             predictions = self.model1.transform(feature_vector)
-            cassandra_stream = predictions.select(
+            extracted_features = predictions.withColumn(
+                "features_array",
+                self.vector_to_array("features"),
+            )
+            cassandra_stream = extracted_features.select(
                 self.get_uuid().alias("id"),
                 "transaction_id",
                 (col("prediction") > 0.5).cast("boolean").alias("fraud"),
                 col("prediction").cast("int").alias("prediction"),
                 self.get_fraud_prob("probability").alias("fraud_probability"),
                 col("nameOrig").alias("customer_id"),
-                col("amount").alias("amount"),
-                col("amount_to_balance_ratio").alias("amount_to_balance_ratio"),
+                col("features_array")[0].alias("amount"),
+                col("features_array")[1].alias("amount_to_balance_ratio"),
             )
 
             query1 = (
@@ -431,18 +439,22 @@ class FraudDetectionPipeline:
             train_data2 = self.preprocess_dataset2(parsed_stream)
             feature_vector = self.create_feature_vector2(train_data2)
             predictions = self.model2.transform(feature_vector)
-            cassandra_stream = predictions.select(
+            extracted_features = predictions.withColumn(
+                "features_array",
+                self.vector_to_array("features"),
+            )
+            cassandra_stream = extracted_features.select(
                 self.get_uuid().alias("id"),
                 (col("prediction") > 0.5).cast("boolean").alias("fraud"),
                 col("prediction").cast("int").alias("prediction"),
                 self.get_fraud_prob("probability").alias("fraud_probability"),
-                col("distance_from_home").cast("float"),
-                col("distance_from_last_transaction").cast("float"),
-                col("ratio_to_median_purchase_price").cast("float"),
-                col("repeat_retailer").cast("int"),
-                col("used_chip").cast("int"),
-                col("used_pin_number").cast("int"),
-                col("online_order").cast("int"),
+                col("features_array")[0].alias("distance_from_home"),
+                col("features_array")[1].alias("distance_from_last_transaction"),
+                col("features_array")[2].alias("ratio_to_median_purchase_price"),
+                col("features_array")[3].alias("repeat_retailer"),
+                col("features_array")[4].alias("used_chip"),
+                col("features_array")[5].alias("used_pin_number"),
+                col("features_array")[6].alias("online_order"),
             )
             query2 = (
                 cassandra_stream.writeStream.format("org.apache.spark.sql.cassandra")
@@ -480,12 +492,17 @@ class FraudDetectionPipeline:
             feature_vector = self.create_feature_vector3(train_data3)
             predictions = self.model3.transform(feature_vector)
 
-            cassandra_stream = predictions.select(
+            extracted_features = predictions.withColumn(
+                "features_array",
+                self.vector_to_array("features"),
+            )
+
+            cassandra_stream = extracted_features.select(
                 self.get_uuid().alias("id"),
                 (col("fraud") == 1).cast("boolean").alias("fraud"),
                 col("customer_id").alias("customer_id"),
                 self.get_fraud_prob("probability").alias("fraud_probability"),
-                col("amt").alias("amount"),
+                col("features_array")[0].alias("amount"),
             )
             query3 = (
                 cassandra_stream.writeStream.format("org.apache.spark.sql.cassandra")
