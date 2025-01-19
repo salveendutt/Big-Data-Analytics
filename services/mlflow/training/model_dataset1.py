@@ -21,7 +21,42 @@ from pyspark.ml import PipelineModel
 from pyspark.ml.feature import VectorAssembler, StringIndexer
 from pyspark.ml.classification import RandomForestClassifier
 # import uuid
-# import os
+import os
+
+print("KDBG START model retraining for dataset 1")
+
+# os.environ["MLFLOW_TRACKING_URI"] = "file:/mlflow"
+# os.environ["BACKEND_STORE_URI"] = "sqlite:///mlflow/mlflow.db"
+# os.environ["ARTIFACT_ROOT"] = "/mlflow/artifacts"
+
+# os.environ["MLFLOW_RUNS_DIR"]= "/mlflow"
+# os.environ["BACKEND_STORE_DB_PATH"]= "/mlflow/mlflow.db"
+# os.environ["BACKEND_STORE_URI"]= "sqlite:///mlflow/mlflow.db"
+# os.environ["DEFAULT_ARTIFACT_ROOT"]= "/mlflow/artifacts"
+# ENV BACKEND_STORE_DB_PATH=$MLFLOW_RUNS_DIR/mlflow.db
+# ENV BACKEND_STORE_URI=sqlite:///$BACKEND_STORE_DB_PATH
+# ENV DEFAULT_ARTIFACT_ROOT=$MLFLOW_RUNS_DIR/artifacts
+
+os.environ["MLFLOW_TRACKING_URI"] = "file:///mlflow"
+os.environ["BACKEND_STORE_URI"] = "sqlite:///mlflow\\mlflow.db"
+os.environ["ARTIFACT_ROOT"] = "/mlflow/artifacts"
+
+# Define experiment name
+experiment_name = "RandomForestDataset1"
+
+# Try to get the experiment by name
+experiment = mlflow.get_experiment_by_name(experiment_name)
+
+# If the experiment does not exist, create it
+if experiment is None:
+    experiment_id = mlflow.create_experiment(experiment_name)
+    print(f"Created experiment: {experiment_name}")
+else:
+    experiment_id = experiment.experiment_id
+    print(f"Experiment already exists: {experiment_name}")
+
+# Set the experiment
+mlflow.set_experiment(experiment_name)
 
 # Initialize Spark session
 spark = SparkSession.builder.appName("MLflowPySparkDataset1").getOrCreate()
@@ -80,13 +115,17 @@ data = assembler.transform(data)
 
 # Train the RandomForestClassifier
 rf = RandomForestClassifier(labelCol="label", featuresCol="features")
-pipeline = Pipeline(stages=[assembler, rf])
+pipeline = Pipeline(stages=[rf])  # Remove assembler from the pipeline
 
 # Fit the model
 model = pipeline.fit(data)
 
 # Log the model with MLflow
 with mlflow.start_run():
+    print("KDBG start run of mlflow")
+    # Log the trained model to MLflow
     mlflow.spark.log_model(model, "random_forest_model")
-    mlflow.log_metric("num_trees", 100)  # Example metric, change based on your model
+    # Log the number of trees in the model
+    num_trees = model.stages[0].getNumTrees
+    mlflow.log_metric("num_trees", num_trees)
     print("Model logged to MLflow.")
