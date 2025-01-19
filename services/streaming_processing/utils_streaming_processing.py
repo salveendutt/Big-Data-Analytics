@@ -14,6 +14,7 @@ from pyspark.sql.functions import (
     sum,
     udf,
     expr,
+    current_timestamp,
 )
 from pyspark.sql.types import (
     StructType,
@@ -393,6 +394,9 @@ class FraudDetectionPipeline:
             extracted_features = predictions.withColumn(
                 "features_array",
                 self.vector_to_array("features"),
+            )
+            extracted_features = extracted_features.withColumn(
+                "timestamp", current_timestamp()
             )
             cassandra_stream = extracted_features.select(
                 self.get_uuid().alias("id"),
