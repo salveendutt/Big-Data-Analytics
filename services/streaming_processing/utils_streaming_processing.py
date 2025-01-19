@@ -393,6 +393,8 @@ class FraudDetectionPipeline:
                 col("prediction").cast("int").alias("prediction"),
                 self.get_fraud_prob("probability").alias("fraud_probability"),
                 col("nameOrig").alias("customer_id"),
+                col("amount").alias("amount"),
+                col("amount_to_balance_ratio").alias("amount_to_balance_ratio"),
             )
 
             query1 = (
@@ -434,6 +436,13 @@ class FraudDetectionPipeline:
                 (col("prediction") > 0.5).cast("boolean").alias("fraud"),
                 col("prediction").cast("int").alias("prediction"),
                 self.get_fraud_prob("probability").alias("fraud_probability"),
+                col("distance_from_home").cast("float"),
+                col("distance_from_last_transaction").cast("float"),
+                col("ratio_to_median_purchase_price").cast("float"),
+                col("repeat_retailer").cast("int"),
+                col("used_chip").cast("int"),
+                col("used_pin_number").cast("int"),
+                col("online_order").cast("int"),
             )
             query2 = (
                 cassandra_stream.writeStream.format("org.apache.spark.sql.cassandra")
@@ -445,6 +454,7 @@ class FraudDetectionPipeline:
                 .trigger(processingTime="30 seconds")
                 .start()
             )
+
             return query2, parsed_stream
         except Exception as e:
             self.logger.error(f"Error processing stream dataset2: {str(e)}")
@@ -475,6 +485,7 @@ class FraudDetectionPipeline:
                 (col("fraud") == 1).cast("boolean").alias("fraud"),
                 col("customer_id").alias("customer_id"),
                 self.get_fraud_prob("probability").alias("fraud_probability"),
+                col("amt").alias("amount"),
             )
             query3 = (
                 cassandra_stream.writeStream.format("org.apache.spark.sql.cassandra")
