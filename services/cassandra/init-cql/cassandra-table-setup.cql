@@ -69,6 +69,8 @@ CREATE TABLE IF NOT EXISTS predictions1 (
     prediction INT,
     fraud_probability FLOAT,
     customer_id TEXT,
+    amount FLOAT,
+    amount_to_balance_ratio FLOAT,
     PRIMARY KEY (id)
 );
 
@@ -78,6 +80,13 @@ CREATE TABLE IF NOT EXISTS predictions2 (
     fraud BOOLEAN,
     prediction INT,
     fraud_probability FLOAT,
+    distance_from_home float,
+    distance_from_last_transaction float,
+    ratio_to_median_purchase_price float,
+    repeat_retailer int,
+    used_chip int,
+    used_pin_number int,
+    online_order int,
     PRIMARY KEY (id)
 );
 CREATE TABLE IF NOT EXISTS predictions3 (
@@ -85,9 +94,9 @@ CREATE TABLE IF NOT EXISTS predictions3 (
     fraud BOOLEAN,
     customer_id TEXT,
     fraud_probability FLOAT,
+    amount FLOAT,
     PRIMARY KEY (id)
 );
-
 
 
 CREATE TABLE IF NOT EXISTS predictions4 (
