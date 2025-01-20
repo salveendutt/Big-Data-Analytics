@@ -10,18 +10,12 @@ ENV PYSPARK_PYTHON=/usr/local/bin/python3
 ENV PATH="${JAVA_HOME}/bin:${PATH}"
 
 
-
 ENV BACKEND_STORE_URI=sqlite:////mlruns/mlflow.db
-# ENV ARTIFACT_ROOT=file:///mlruns
-ENV ARTIFACT_ROOT=hdfs://namenode:8020/user/models/mlruns
-ENV MLFLOW_ARTIFACT_URI=hdfs://namenode:8020/user/models/mlruns
+ENV ARTIFACT_ROOT=file:///mlruns
 
 # Install necessary dependencies
 RUN apt-get update && apt-get install -y cron procps  && \
     pip install setuptools mlflow pyspark
-
-# RUN apt-get install -y libhdfs0 libhdfs-dev
-# RUN apt-get install -y libhdfs3
 
 # Expose the port for the MLflow server
 EXPOSE 5000
@@ -29,7 +23,7 @@ EXPOSE 5000
 # Copy your services and scripts
 COPY ./services/mlflow /app
 
-COPY ./services/mlflow/hadoop /hadoop
+# COPY ./services/mlflow/hadoop /hadoop
 
 ENV HADOOP_HOME=/hadoop
 ENV PATH="${HADOOP_HOME}/bin:${PATH}"
