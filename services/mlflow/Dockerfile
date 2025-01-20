@@ -11,7 +11,7 @@ ENV PATH="${JAVA_HOME}/bin:${PATH}"
 
 
 
-ENV BACKEND_STORE_URI=sqlite:////mlruns\/mlflow.db
+ENV BACKEND_STORE_URI=sqlite:////mlruns/mlflow.db
 ENV ARTIFACT_ROOT=file:///mlruns
 
 # Install necessary dependencies
@@ -23,6 +23,8 @@ EXPOSE 5000
 
 # Copy your services and scripts
 COPY ./services/mlflow /app
+
+COPY ./datasets/train_Fraud.csv /app/train_Fraud.csv
 
 COPY ./services/mlflow/crontab /etc/cron.d/crontab
 RUN chmod 0644 /etc/cron.d/crontab

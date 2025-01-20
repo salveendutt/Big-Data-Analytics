@@ -20,33 +20,9 @@ from pyspark.ml import Pipeline
 from pyspark.ml import PipelineModel
 from pyspark.ml.feature import VectorAssembler, StringIndexer
 from pyspark.ml.classification import RandomForestClassifier
-# import uuid
+import uuid
 import os
-import logging
 
-logger = logging.getLogger("mlflow")
-
-# Set log level to debugging
-logger.setLevel(logging.DEBUG)
-
-print("KDBG START model retraining for dataset 1")
-
-# os.environ["MLFLOW_TRACKING_URI"] = "file:/mlflow"
-# os.environ["BACKEND_STORE_URI"] = "sqlite:///mlflow/mlflow.db"
-# os.environ["ARTIFACT_ROOT"] = "/mlflow/artifacts"
-
-# os.environ["MLFLOW_RUNS_DIR"]= "/mlflow"
-# os.environ["BACKEND_STORE_DB_PATH"]= "/mlflow/mlflow.db"
-# os.environ["BACKEND_STORE_URI"]= "sqlite:///mlflow/mlflow.db"
-# os.environ["DEFAULT_ARTIFACT_ROOT"]= "/mlflow/artifacts"
-# ENV BACKEND_STORE_DB_PATH=$MLFLOW_RUNS_DIR/mlflow.db
-# ENV BACKEND_STORE_URI=sqlite:///$BACKEND_STORE_DB_PATH
-# ENV DEFAULT_ARTIFACT_ROOT=$MLFLOW_RUNS_DIR/artifacts
-
-# os.environ["MLFLOW_TRACKING_URI"] = "http://localhost:5000"
-# os.environ["BACKEND_STORE_URI"] = "sqlite:////app/mlruns/mlflow.db"
-# os.environ["BACKEND_STORE_URI"] = "file:/app/mlruns"
-# os.environ["ARTIFACT_ROOT"] = "/app/mlartifacts"
 os.environ["GIT_PYTHON_REFRESH"] = "quiet"
 
 print(f"ARTIFACT_ROOT={os.environ["ARTIFACT_ROOT"]}")
@@ -68,77 +44,106 @@ else:
 # Set the experiment
 mlflow.set_experiment(experiment_name)
 
-# Initialize Spark session
-spark = SparkSession.builder.appName("MLflowPySparkDataset1").getOrCreate()
+def create_feature_vector1(df):
+    """Create feature vector for model1 (dataset1)"""
+    try:
+        df = df.withColumn(
+            "amount_to_balance_ratio",
+            when(
+                col("oldbalanceOrg") > 0, col("amount") / col("oldbalanceOrg")
+            ).otherwise(0),
+        ).withColumnRenamed("isFraud", "fraud")
+        # Add transaction_id column if it doesn't exist
+        df = df.withColumn(
+            "transaction_id",
+            when(
+                col("nameOrig").isNotNull(),
+                concat(col("nameOrig"), lit("_"), col("step").cast("string")),
+            ).otherwise(lit(str(uuid.uuid4()))),
+        )
+        df = df.withColumn("amount", col("amount").cast("float"))
+        df = df.withColumn("fraud", col("fraud").cast("int"))
 
-# def create_feature_vector1(df):
-#     """Create feature vector for model1 (dataset1)"""
-#     try:
-#         df = df.withColumn(
-#             "amount_to_balance_ratio",
-#             when(
-#                 col("oldbalanceOrg") > 0, col("amount") / col("oldbalanceOrg")
-#             ).otherwise(0),
-#         ).withColumnRenamed("isFraud", "fraud")
-#         # Add transaction_id column if it doesn't exist
-#         df = df.withColumn(
-#             "transaction_id",
-#             when(
-#                 col("nameOrig").isNotNull(),
-#                 concat(col("nameOrig"), lit("_"), col("step").cast("string")),
-#             ).otherwise(lit(str(uuid.uuid4()))),
-#         )
-#         df = df.withColumn("amount", col("amount").cast("float"))
-#         df = df.withColumn("fraud", col("fraud").cast("int"))
+        feature_cols = ["amount", "amount_to_balance_ratio"]
 
-#         feature_cols = ["amount", "amount_to_balance_ratio"]
+        assembler = VectorAssembler(inputCols=feature_cols, outputCol="features")
 
-#         assembler = VectorAssembler(inputCols=feature_cols, outputCol="features")
+        # Select all necessary columns including those needed for predictions
+        return assembler.transform(df).select(
+            "features",
+            "fraud",
+            "transaction_id",
+            "type",
+            "amount",
+            "nameOrig",
+            "nameDest",
+        )
+    except Exception as e:
+        print(f"Error creating feature vector for model1: {str(e)}")
+        raise
 
-#         # Select all necessary columns including those needed for predictions
-#         return assembler.transform(df).select(
-#             "features",
-#             "fraud",
-#             "transaction_id",
-#             "type",
-#             "amount",
-#             "nameOrig",
-#             "nameDest",
-#         )
-#     except Exception as e:
-#         print(f"Error creating feature vector for model1: {str(e)}")
-#         raise
+spark = (
+    SparkSession.builder.appName("MLflowPySparkDataset1")
+    .getOrCreate()
+)
 
-# Sample Data (for illustration purposes, this should be a larger dataset in practice)
-data = spark.createDataFrame([
-    (0, 1.0, 1.0),
-    (1, 1.0, 2.0),
-    (2, 2.0, 1.0),
-    (3, 2.0, 2.0),
-    (4, 3.0, 3.0),
-    (5, 3.0, 4.0),
-], ["label", "feature1", "feature2"])
+try:
+    fraud_data = spark.read.csv("/app/train_Fraud.csv", header=True)
+    # credit_card_data = spark.read.csv(
+    #     "../datasets/test_Credit_Card_Fraud_.csv", header=True
+    # )
+    # transactions_data = spark.read.csv(
+    #     "../datasets/test_transactions_df.csv", header=True
+    # )
 
-# Create feature vector
-assembler = VectorAssembler(inputCols=["feature1", "feature2"], outputCol="features")
-data = assembler.transform(data)
+    fraud_data = fraud_data.withColumn(
+        "amount_to_balance_ratio",
+        when(col("oldbalanceOrg") > 0, col("amount") / col("oldbalanceOrg")).otherwise(
+            0
+        ),
+    )
+    fraud_data = create_feature_vector1(fraud_data)
+    # credit_card_data = create_feature_vector2(credit_card_data)
+    # transactions_data = create_feature_vector3(transactions_data)
 
-# Train the RandomForestClassifier
-rf = RandomForestClassifier(labelCol="label", featuresCol="features")
-pipeline = Pipeline(stages=[rf])  # Remove assembler from the pipeline
+    # Initialize models
+    rf1 = RandomForestClassifier(labelCol="fraud", featuresCol="features", numTrees=10)
+    # rf2 = RandomForestClassifier(labelCol="fraud", featuresCol="features", numTrees=10)
+    # rf3 = RandomForestClassifier(labelCol="fraud", featuresCol="features", numTrees=10)
 
-# Fit the model
-model = pipeline.fit(data)
+    # Create pipelines
+    pipeline1 = Pipeline(stages=[rf1])
+    # pipeline2 = Pipeline(stages=[rf2])
+    # pipeline3 = Pipeline(stages=[rf3])
 
-# Log the model with MLflow
-with mlflow.start_run() as run:
-    print("KDBG start run of mlflow")
+    # Train models
+    model1 = pipeline1.fit(fraud_data)
+    # model2 = pipeline2.fit(credit_card_data)
+    # model3 = pipeline3.fit(transactions_data)
+    current_path = os.path.dirname(os.path.abspath(__file__))
 
-    artifact_uri = run.info.artifact_uri
-    print(f'artifact_uri={artifact_uri}')
-    # Log the trained model to MLflow
-    mlflow.spark.log_model(model, "random_forest_model")
-    # Log the number of trees in the model
-    num_trees = model.stages[0].getNumTrees
-    mlflow.log_metric("num_trees", num_trees)
-    print("Model logged to MLflow.")
+    model1.write().overwrite().save(os.path.join(current_path, "models/rf_fraud_model"))
+    # model2.write().overwrite().save(
+    #     os.path.join(current_path, "models/rf_credit_card_model")
+    # )
+    # model3.write().overwrite().save(
+    #     os.path.join(current_path, "models/rf_transactions_model")
+    # )
+    with mlflow.start_run() as run:
+        print("START model retraining for Dataset 1")
+
+        artifact_uri = run.info.artifact_uri
+        print(f'artifact_uri={artifact_uri}')
+        mlflow.spark.log_model(model1, "fraud_dataset1")
+        num_trees = model1.stages[0].getNumTrees
+        mlflow.log_metric("num_trees", num_trees)
+        # Register the model
+        model_uri = f"runs:/{run.info.run_id}/fraud_dataset1"
+        print(f"Model URI: {model_uri}")
+        mlflow.register_model(model_uri, "FraudDataset1")
+        print("END model retraining for Dataset 1")
+except Exception as e:
+    print(f"Error training models: {e}")
+    spark.stop()
+finally:
+    spark.stop()
