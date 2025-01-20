@@ -63,9 +63,10 @@ services:
       SPARK_DRIVER_MEMORY: "1g"
       SPARK_EXECUTOR_MEMORY: "1g"
       SPARK_CONF_spark_hive_metastore_uris: thrift://hive-metastore:9083
+      SPARK_MASTER_WEBUI_PORT: 8081
     ports:
       - "7077:7077" 
-      - "8080:8080"
+      - "8081:8081"
     volumes:
       - ./services/hadoop/config/core-site.xml:/opt/bitnami/spark/conf/core-site.xml
       - ./services/hadoop/config/hdfs-site.xml:/opt/bitnami/spark/conf/hdfs-site.xml
@@ -245,11 +246,12 @@ services:
     volumes:
       - ./services/superset:/app/pythonpath:ro
       - superset_home:/app/superset_home
+      - ./services/superset/dashboard_export.zip:/app/dashboard_export.zip
     ports:
       - '8088:8088'
     networks:
       custom_net:
-        ipv4_address: 192.168.1.110
+        ipv4_address: 192.168.1.113
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8088/health"]
       interval: 10s

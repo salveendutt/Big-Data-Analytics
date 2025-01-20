@@ -1,0 +1,2 @@
+docker compose exec superset superset export-dashboards -f dashboard_export.zip && docker cp superset:/app/dashboard_export.zip ../services/superset
+docker compose exec superset superset export_datasources -f datasources_export.zip && docker cp superset:/app/datasources_export.zip ../services/superset

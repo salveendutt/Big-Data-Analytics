@@ -83,7 +83,6 @@ def create_customer_risk_view(df):
         .withColumn(
             "fraud_rate", col("fraudulent_transactions") / col("total_transactions")
         )
-        .filter(col("total_transactions") >= 5)
     )
 
 

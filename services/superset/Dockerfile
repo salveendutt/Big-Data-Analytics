@@ -15,7 +15,8 @@ RUN apt-get update \
 # Install Python packages for database connectivity
 RUN pip install --no-cache \
     trino \
-    sqlalchemy-trino
+    sqlalchemy-trino \
+    pillow
 
 # Create directory for SQLite database with proper permissions
 RUN mkdir -p /app/superset_home && \
