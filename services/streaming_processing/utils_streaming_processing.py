@@ -1,3 +1,6 @@
+import mlflow
+from mlflow.tracking import MlflowClient
+import mlflow.pyfunc
 import time
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import (
@@ -42,7 +45,7 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 import joblib
 
-
+mlflow.set_tracking_uri("http://192.168.1.121:5000")
 class FraudDetectionPipeline:
     def __init__(self):
         logging.basicConfig(
@@ -327,6 +330,8 @@ class FraudDetectionPipeline:
             model2_path = f"{base_path}/model2_{latest_timestamp}"
             model3_path = f"{base_path}/model3_{latest_timestamp}"
 
+            print(f"KDBG model1_path={model1_path}")
+
             model1_exists = fs.exists(
                 self.spark._jvm.org.apache.hadoop.fs.Path(model1_path)
             )
@@ -567,6 +572,34 @@ class FraudDetectionPipeline:
         self.logger.info("Starting Fraud Detection Pipeline...")
 
         try:
+            
+            client = MlflowClient()
+            model_name = "FraudDataset1"
+
+            # Get the latest version of the model that is in 'READY' stage
+            latest_version_info = client.get_latest_versions(model_name, stages=["None", "Staging", "Production"])
+
+            if latest_version_info:
+                latest_version = latest_version_info[-1]  # Get the last one as it's the latest in this list
+                self.logger.info(f"Latest version={latest_version.version}")
+                # model_uri = f"runs:/{latest_version.run_id}/fraud_dataset1"
+                model_uri = f"models:/FraudDataset1/latest"
+                # model_uri = f"mlflow-artifacts:/mlruns/1/f398459a804a4450ae5d95fd7cc85b82/artifacts/fraud_dataset1/"
+                self.logger.info(f"Latest version URI: {model_uri}")
+                
+                # Load the model for inference
+                model = mlflow.pyfunc.load_model(model_uri)
+                self.logger.info("Model loaded successfully.")
+
+                # Example usage of the model (if applicable)
+                # example_input = ...  # Provide input data here
+                # predictions = model.predict(example_input)
+                # print(f"Predictions: {predictions}")
+            else:
+                self.logger.info(f"No versions found for the model {model_name}.")
+
+            self.logger.info("KDBG finished checking model version")
+
             # training_df1 = pd.read_csv("./datasets/train_Fraud.csv")
 
             # training_data1 = training_df1.to_dict(orient="records")

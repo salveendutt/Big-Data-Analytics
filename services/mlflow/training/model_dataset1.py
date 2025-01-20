@@ -22,24 +22,64 @@ from pyspark.ml.feature import VectorAssembler, StringIndexer
 from pyspark.ml.classification import RandomForestClassifier
 import uuid
 import os
+import config_streaming_processing as config
 
 os.environ["GIT_PYTHON_REFRESH"] = "quiet"
 
 print(f"ARTIFACT_ROOT={os.environ["ARTIFACT_ROOT"]}")
+print(f"HADOOP_HOME={os.environ["HADOOP_HOME"]}")
+
+# mlflow.set_artifact_uri("hdfs://namenode:8020/user/models/mlruns")
 
 # Define experiment name
-experiment_name = "RandomForestDataset1"
+experiment_name = "RandomForestDataset1_hdfs"
 
 # Try to get the experiment by name
 experiment = mlflow.get_experiment_by_name(experiment_name)
 
 # If the experiment does not exist, create it
 if experiment is None:
-    experiment_id = mlflow.create_experiment(experiment_name)
+    experiment_id = mlflow.create_experiment(experiment_name, artifact_location="hdfs://namenode:8020/user/models/mlruns")
     print(f"Created experiment: {experiment_name}")
 else:
     experiment_id = experiment.experiment_id
     print(f"Experiment already exists: {experiment_name}")
+
+def _initialize_spark():
+    """Initialize Spark session"""
+    try:
+        return (
+            SparkSession.builder.master(config.spark_master_address)
+            .config("spark.sql.warehouse.dir", config.warehouse_dir)
+            .config("spark.sql.streaming.checkpointLocation", "/tmp/checkpoint")
+            .config("spark.jars.packages", config.spark_jars_packages)
+            .config("spark.hadoop.fs.defaultFS", config.default_fs)
+            .config("spark.hadoop.dfs.client.use.datanode.hostname", "true")
+            .config("spark.cassandra.connection.host", config.cassandra_address)
+            .config("spark.cassandra.auth.username", config.cassandra_username)
+            .config("spark.cassandra.auth.password", config.cassandra_password)
+            .appName("Fraud Detection Pipeline")
+            .getOrCreate()
+        )
+
+    except Exception as e:
+        print(f"Failed to initialize Spark: {e}")
+        raise
+
+base_path = "hdfs://namenode:8020/user/models/mlruns"
+
+# spark = (
+#     SparkSession.builder.appName("MLflowPySparkDataset1")
+#     .getOrCreate()
+# )
+spark = _initialize_spark()
+
+fs = spark._jvm.org.apache.hadoop.fs.FileSystem.get(
+    spark._jsc.hadoopConfiguration()
+)
+base_path_hdfs = spark._jvm.org.apache.hadoop.fs.Path(base_path)
+if not fs.exists(base_path_hdfs):
+    fs.mkdirs(base_path_hdfs)
 
 # Set the experiment
 mlflow.set_experiment(experiment_name)
@@ -82,13 +122,10 @@ def create_feature_vector1(df):
         print(f"Error creating feature vector for model1: {str(e)}")
         raise
 
-spark = (
-    SparkSession.builder.appName("MLflowPySparkDataset1")
-    .getOrCreate()
-)
-
 try:
-    fraud_data = spark.read.csv("/app/train_Fraud.csv", header=True)
+    spark.conf.set("spark.hadoop.fs.defaultFS", "file:///")
+    fraud_data = spark.read.csv("file:///app/train_Fraud.csv", header=True)
+    spark.conf.set("spark.hadoop.fs.defaultFS", "hdfs://namenode:8020")
     # credit_card_data = spark.read.csv(
     #     "../datasets/test_Credit_Card_Fraud_.csv", header=True
     # )
