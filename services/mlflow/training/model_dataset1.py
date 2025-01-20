@@ -27,19 +27,19 @@ import config_streaming_processing as config
 os.environ["GIT_PYTHON_REFRESH"] = "quiet"
 
 print(f"ARTIFACT_ROOT={os.environ["ARTIFACT_ROOT"]}")
-print(f"HADOOP_HOME={os.environ["HADOOP_HOME"]}")
+# print(f"HADOOP_HOME={os.environ["HADOOP_HOME"]}")
 
 # mlflow.set_artifact_uri("hdfs://namenode:8020/user/models/mlruns")
 
 # Define experiment name
-experiment_name = "RandomForestDataset1_hdfs"
+experiment_name = "RandomForestDataset1"
 
 # Try to get the experiment by name
 experiment = mlflow.get_experiment_by_name(experiment_name)
 
 # If the experiment does not exist, create it
 if experiment is None:
-    experiment_id = mlflow.create_experiment(experiment_name, artifact_location="hdfs://namenode:8020/user/models/mlruns")
+    experiment_id = mlflow.create_experiment(experiment_name)
     print(f"Created experiment: {experiment_name}")
 else:
     experiment_id = experiment.experiment_id
@@ -66,20 +66,22 @@ def _initialize_spark():
         print(f"Failed to initialize Spark: {e}")
         raise
 
-base_path = "hdfs://namenode:8020/user/models/mlruns"
 
-# spark = (
-#     SparkSession.builder.appName("MLflowPySparkDataset1")
-#     .getOrCreate()
-# )
-spark = _initialize_spark()
-
-fs = spark._jvm.org.apache.hadoop.fs.FileSystem.get(
-    spark._jsc.hadoopConfiguration()
+spark = (
+    SparkSession.builder.appName("MLflowPySparkDataset1")
+    .getOrCreate()
 )
-base_path_hdfs = spark._jvm.org.apache.hadoop.fs.Path(base_path)
-if not fs.exists(base_path_hdfs):
-    fs.mkdirs(base_path_hdfs)
+
+
+# base_path = "hdfs://namenode:8020/user/models/mlruns"
+# spark = _initialize_spark()
+
+# fs = spark._jvm.org.apache.hadoop.fs.FileSystem.get(
+#     spark._jsc.hadoopConfiguration()
+# )
+# base_path_hdfs = spark._jvm.org.apache.hadoop.fs.Path(base_path)
+# if not fs.exists(base_path_hdfs):
+#     fs.mkdirs(base_path_hdfs)
 
 # Set the experiment
 mlflow.set_experiment(experiment_name)
@@ -123,9 +125,7 @@ def create_feature_vector1(df):
         raise
 
 try:
-    spark.conf.set("spark.hadoop.fs.defaultFS", "file:///")
-    fraud_data = spark.read.csv("file:///app/train_Fraud.csv", header=True)
-    spark.conf.set("spark.hadoop.fs.defaultFS", "hdfs://namenode:8020")
+    fraud_data = spark.read.csv("/app/train_Fraud.csv", header=True)
     # credit_card_data = spark.read.csv(
     #     "../datasets/test_Credit_Card_Fraud_.csv", header=True
     # )
@@ -157,9 +157,9 @@ try:
     model1 = pipeline1.fit(fraud_data)
     # model2 = pipeline2.fit(credit_card_data)
     # model3 = pipeline3.fit(transactions_data)
-    current_path = os.path.dirname(os.path.abspath(__file__))
+    # current_path = os.path.dirname(os.path.abspath(__file__))
 
-    model1.write().overwrite().save(os.path.join(current_path, "models/rf_fraud_model"))
+    # model1.write().overwrite().save(os.path.join(current_path, "models/rf_fraud_model"))
     # model2.write().overwrite().save(
     #     os.path.join(current_path, "models/rf_credit_card_model")
     # )

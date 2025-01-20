@@ -50,6 +50,8 @@ services:
         ipv4_address: 192.168.1.108
     ports:
       - "5003:5003"
+    volumes:
+      - mlflow_runs:/mlruns
 
   spark-master:
     image: bitnami/spark:3.5.3
@@ -72,7 +74,6 @@ services:
       - ./services/hadoop/config/hdfs-site.xml:/opt/bitnami/spark/conf/hdfs-site.xml
       - ./services/spark/hive-site.xml:/opt/bitnami/spark/conf/hive-site.xml
       - ./services/spark/setup:/docker-entrypoint-initdb.d
-      - mlflow_app:/app
     networks:
       custom_net:
         ipv4_address: 192.168.1.109
@@ -91,7 +92,6 @@ services:
       - ./services/hadoop/config/hdfs-site.xml:/opt/bitnami/spark/conf/hdfs-site.xml
       - ./services/spark/hive-site.xml:/opt/bitnami/spark/conf/hive-site.xml
       - ./services/spark/setup:/docker-entrypoint-initdb.d
-      - mlflow_app:/app
     networks:
       custom_net:
         ipv4_address: 192.168.1.110
@@ -281,7 +281,6 @@ services:
         ipv4_address: 192.168.1.121
     volumes:
       - mlflow_runs:/mlruns
-      - mlflow_app:/app
 
 networks:
   custom_net:
@@ -298,4 +297,3 @@ volumes:
   presto-data:
   superset_home:
   mlflow_runs:
-  mlflow_app:
