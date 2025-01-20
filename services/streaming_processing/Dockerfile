@@ -1,9 +1,12 @@
 FROM python:3.12.7-slim
-COPY --from=openjdk:8-jre-slim /usr/local/openjdk-8 /usr/local/openjdk-8
+# COPY --from=openjdk:8-jre-slim /usr/local/openjdk-8 /usr/local/openjdk-8
+COPY --from=openjdk:11-jre-slim /usr/local/openjdk-11 /usr/local/openjdk-11
 
-ENV JAVA_HOME=/usr/local/openjdk-8
+# ENV JAVA_HOME=/usr/local/openjdk-8
+ENV JAVA_HOME=/usr/local/openjdk-11
 
-RUN update-alternatives --install /usr/bin/java java /usr/local/openjdk-8/bin/java 1
+# RUN update-alternatives --install /usr/bin/java java /usr/local/openjdk-8/bin/java 1
+RUN update-alternatives --install /usr/bin/java java /usr/local/openjdk-11/bin/java 1
 
 RUN apt-get update && apt-get install -y procps git
 
@@ -20,6 +23,8 @@ COPY ./services/streaming_processing /app
 
 
 RUN --mount=type=cache,target=/root/.cache/pip pip install -r streaming_processing_requirements.txt
+
+RUN pip install setuptools mlflow pyspark
 
 LABEL Name="streaming_processing"
 
