@@ -5,6 +5,11 @@ service cron start
 
 tail -f /var/log/cron.log &
 
+echo $BACKEND_STORE_URI
+echo $ARTIFACT_ROOT
+
 # Start the MLflow server
-# mlflow server --backend-store-uri $BACKEND_STORE_URI --default-artifact-root $ARTIFACT_ROOT --host 0.0.0.0
-mlflow server --backend-store-uri sqlite:///mlflow\mlflow.db --default-artifact-root /mlflow/artifacts --host 0.0.0.0
+mlflow server --backend-store-uri sqlite:////mlruns/mlflow.db --default-artifact-root file:///mlruns --host 0.0.0.0
+# mlflow server --backend-store-uri sqlite:////app\/mlruns\/mlflow.db --default-artifact-root /app\/mlruns\/artifacts --host 0.0.0.0
+# mlflow server --backend-store-uri file:/app\/mlruns --default-artifact-root /app\/mlartifacts --host 0.0.0.0
+# mlflow server --host 0.0.0.0

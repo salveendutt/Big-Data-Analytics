@@ -22,6 +22,12 @@ from pyspark.ml.feature import VectorAssembler, StringIndexer
 from pyspark.ml.classification import RandomForestClassifier
 # import uuid
 import os
+import logging
+
+logger = logging.getLogger("mlflow")
+
+# Set log level to debugging
+logger.setLevel(logging.DEBUG)
 
 print("KDBG START model retraining for dataset 1")
 
@@ -37,9 +43,13 @@ print("KDBG START model retraining for dataset 1")
 # ENV BACKEND_STORE_URI=sqlite:///$BACKEND_STORE_DB_PATH
 # ENV DEFAULT_ARTIFACT_ROOT=$MLFLOW_RUNS_DIR/artifacts
 
-os.environ["MLFLOW_TRACKING_URI"] = "file:///mlflow"
-os.environ["BACKEND_STORE_URI"] = "sqlite:///mlflow\\mlflow.db"
-os.environ["ARTIFACT_ROOT"] = "/mlflow/artifacts"
+# os.environ["MLFLOW_TRACKING_URI"] = "http://localhost:5000"
+# os.environ["BACKEND_STORE_URI"] = "sqlite:////app/mlruns/mlflow.db"
+# os.environ["BACKEND_STORE_URI"] = "file:/app/mlruns"
+# os.environ["ARTIFACT_ROOT"] = "/app/mlartifacts"
+os.environ["GIT_PYTHON_REFRESH"] = "quiet"
+
+print(f"ARTIFACT_ROOT={os.environ["ARTIFACT_ROOT"]}")
 
 # Define experiment name
 experiment_name = "RandomForestDataset1"
@@ -121,8 +131,11 @@ pipeline = Pipeline(stages=[rf])  # Remove assembler from the pipeline
 model = pipeline.fit(data)
 
 # Log the model with MLflow
-with mlflow.start_run():
+with mlflow.start_run() as run:
     print("KDBG start run of mlflow")
+
+    artifact_uri = run.info.artifact_uri
+    print(f'artifact_uri={artifact_uri}')
     # Log the trained model to MLflow
     mlflow.spark.log_model(model, "random_forest_model")
     # Log the number of trees in the model
