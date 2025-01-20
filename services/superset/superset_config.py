@@ -1,4 +1,5 @@
 import os
+
 # from superset import app
 
 
@@ -29,7 +30,7 @@ SQLALCHEMY_TRACK_MODIFICATIONS = True
 #         trino_db = Database(
 #             database_name="trino",
 #             sqlalchemy_uri="trino://admin:@presto:8080/cassandra/fraud_analytics",
-#             extra="{}" 
+#             extra="{}"
 #         )
 #         session.add(trino_db)
 #         session.commit()

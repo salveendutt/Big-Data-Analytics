@@ -508,7 +508,7 @@ class FraudDetectionPipeline:
             extracted_features = extracted_features.withColumn(
                 "timestamp", current_timestamp()
             )
-            
+
             cassandra_stream = extracted_features.select(
                 self.get_uuid().alias("id"),
                 (col("fraud") == 1).cast("boolean").alias("fraud"),
