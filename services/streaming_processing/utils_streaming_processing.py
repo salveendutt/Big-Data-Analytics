@@ -1,6 +1,6 @@
-import mlflow
-from mlflow.tracking import MlflowClient
-import mlflow.pyfunc
+# import mlflow
+# from mlflow.tracking import MlflowClient
+# import mlflow.pyfunc
 import time
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import (
@@ -46,7 +46,8 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 import joblib
 
-mlflow.set_tracking_uri("http://192.168.1.121:5000")
+# mlflow.set_tracking_uri("http://192.168.1.121:5000")
+
 class FraudDetectionPipeline:
     def __init__(self):
         logging.basicConfig(
@@ -376,6 +377,20 @@ class FraudDetectionPipeline:
     def preprocess_dataset3(self, df):
         """Preprocess dataset3"""
         return df
+    
+    # def load_model1_from_mlflow(self):
+    #     client = MlflowClient()
+    #     model_name = "FraudDataset1"
+    #     latest_version_info = client.get_latest_versions(model_name, stages=["None", "Staging", "Production"])
+    #     model = None
+    #     if latest_version_info:
+    #         latest_version = latest_version_info[-1]
+    #         self.logger.info(f"Latest version of {model_name}={latest_version.version}")
+    #         model = mlflow.pyfunc.load_model(latest_version.source)
+    #         self.logger.info("Model loaded successfully.")
+    #     else:
+    #         self.logger.info(f"No versions found for the model {model_name}.")
+    #     return model
 
     def process_stream_dataset1(self):
         try:
@@ -585,34 +600,6 @@ class FraudDetectionPipeline:
         self.logger.info("Starting Fraud Detection Pipeline...")
 
         try:
-            
-            client = MlflowClient()
-            model_name = "FraudDataset1"
-
-            # Get the latest version of the model that is in 'READY' stage
-            latest_version_info = client.get_latest_versions(model_name, stages=["None", "Staging", "Production"])
-
-            if latest_version_info:
-                latest_version = latest_version_info[-1]  # Get the last one as it's the latest in this list
-                self.logger.info(f"Latest version={latest_version.version}")
-                # model_uri = f"runs:/{latest_version.run_id}/fraud_dataset1"
-                model_uri = f"models:/FraudDataset1/latest"
-                # model_uri = f"mlflow-artifacts:/mlruns/1/f398459a804a4450ae5d95fd7cc85b82/artifacts/fraud_dataset1/"
-                self.logger.info(f"Latest version URI: {model_uri}")
-                
-                # Load the model for inference
-                model = mlflow.pyfunc.load_model(model_uri)
-                self.logger.info("Model loaded successfully.")
-
-                # Example usage of the model (if applicable)
-                # example_input = ...  # Provide input data here
-                # predictions = model.predict(example_input)
-                # print(f"Predictions: {predictions}")
-            else:
-                self.logger.info(f"No versions found for the model {model_name}.")
-
-            self.logger.info("KDBG finished checking model version")
-
             # training_df1 = pd.read_csv("./datasets/train_Fraud.csv")
 
             # training_data1 = training_df1.to_dict(orient="records")
@@ -664,7 +651,7 @@ class FraudDetectionPipeline:
                             self.spark._jvm.org.apache.hadoop.fs.Path(file_path),
                             self.spark._jvm.org.apache.hadoop.fs.Path(dst_path),
                         )
-
+            # self.model1 = self.load_model1_from_mlflow()
             self.model1 = PipelineModel.load(model1_path)
             self.model2 = PipelineModel.load(model2_path)
             self.model3 = PipelineModel.load(model3_path)
