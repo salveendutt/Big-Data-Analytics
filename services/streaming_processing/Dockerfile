@@ -24,7 +24,7 @@ COPY ./services/streaming_processing /app
 
 RUN --mount=type=cache,target=/root/.cache/pip pip install -r streaming_processing_requirements.txt
 
-RUN pip install setuptools mlflow pyspark
+# RUN pip install setuptools mlflow pyspark
 
 LABEL Name="streaming_processing"
 
