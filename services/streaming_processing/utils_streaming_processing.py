@@ -48,6 +48,7 @@ import joblib
 
 # mlflow.set_tracking_uri("http://192.168.1.121:5000")
 
+
 class FraudDetectionPipeline:
     def __init__(self):
         logging.basicConfig(
@@ -377,7 +378,7 @@ class FraudDetectionPipeline:
     def preprocess_dataset3(self, df):
         """Preprocess dataset3"""
         return df
-    
+
     # def load_model1_from_mlflow(self):
     #     client = MlflowClient()
     #     model_name = "FraudDataset1"

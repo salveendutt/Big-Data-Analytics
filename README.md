@@ -1,5 +1,8 @@
-# Big-Data-Analytics
+# Real-time Fraud Detection System
 
+A real-time financial transaction processing system designed to detect fraudulent activities using big data technologies and advanced machine learning algorithms. The project implements the Lambda architecture, allowing streaming and batch data processing.
+
+Technologies used: Apache NiFi, Spark, Hadoop, HDFS, Hive, Cassandra, Superset, TrinoDB, Kafka, Kafdrop, Zookeeper, MLFlow, Docker
 ## How to run
 
 1. Make sure you have docker, Python (preferably 3.12.7), and OPTIONALLY JDK 17 (look at the step below; it is necessary for local model training with Spark) installed
@@ -41,3 +44,21 @@ Expected structure:
 │   └── creditcard.csv // dataset 4: 'Credit Card Fraud Detection' from Kaggle (optional)  
 ├── ...  
 ```
+
+## Architecture
+
+![Architecture](./reports/images/m3-architecture.drawio.png?raw=true "Architecture")
+
+
+## Superset
+
+![Superset](./reports/images/superset-1.png?raw=true "Superset")
+
+![Superset](./reports/images/superset-2.png?raw=true "Superset")
+
+## NiFi
+
+![NiFi](./reports/images/m3-nifi-main-view.png?raw=true "NiFi")
+
+
+![NiFi](./reports/images/m3-nifi-processor.png?raw=true "NiFi")
