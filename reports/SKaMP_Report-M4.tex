@@ -434,7 +434,7 @@ The following Big Data platforms will be used:
 
 The stream processing container is responsible for two main tasks: model training and message processing. 
 
-At the moment, we have tested 4 models for fraud detection and selected Random Forest as it provided better performance on all of the datasets. A comparison of the model's performance is provided in the table below, including metrics precision (P) and recall (R).
+We have tested 4 models for fraud detection and selected Random Forest as it provided better performance on all of the datasets. A comparison of the model's performance is provided in the table below, including metrics precision (P) and recall (R).
 
 \begin{table}[h!]
 \centering
@@ -451,6 +451,15 @@ At the moment, we have tested 4 models for fraud detection and selected Random F
 
 The initial model is being trained locally with a spark on the collected 'train' portion of the datasets.
 As the next step, the streaming layer uses Spark Streaming in micro-batches mode to consume three Kafka streams and run predictions on them. Moreover, this module also includes the joining of these streams to produce additional insights.
+
+Additionally, we planned introduce periodic model retraining and model version menagement using MLflow. We have set up a separate container (services/mlflow) with MLflow server and a cron job to update the fraud classifier. The model artifacts are saved in a shared storage (Docker volume or, preferably, HDFS). The results of the job run are available in container logs or MLflow UI as shown on Figure \ref{fig:mlflowUi}. Unfortunately, we had issues connecting stream processing container to the artifacts storage, therefore, a localy pretrained model is used instread.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.95\textwidth]{images/mlflowUi.png}
+    \caption{MLflow UI with trained model versions}
+    \label{fig:mlflowUi}
+\end{figure}
 
 \section{Batch Layer}
 
