@@ -67,7 +67,7 @@
 \section*{Introduction}
 \addcontentsline{toc}{section}{Introduction}
 
-This project aims to plan and implement a financial transaction processing system that identifies suspicious and fraudulent activity in real time. Given the enormous volume of incoming data, the project utilizes big data technologies and advanced machine learning algorithms for anomaly detection. The project is available on the GitHub repository: \href{https://github.com/salveendutt/Big-Data-Analytics}{https://github.com/salveendutt/Big-Data-Analytics}.
+This project aims to plan and implement a financial transaction processing system that identifies suspicious and fraudulent activity in real time. Given the enormous volume of incoming data, the project utilizes big data technologies and advanced machine learning algorithms for anomaly detection.\par The project is available on the GitHub repository: \href{https://github.com/salveendutt/Big-Data-Analytics}{https://github.com/salveendutt/Big-Data-Analytics}.
 
 \subsection*{Updates from Milestone 3}
 \addcontentsline{toc}{subsection}{Updates from Milestone 3}
@@ -174,7 +174,7 @@ The following transformation should be done to pass the dataset to the ML models
     \item a new attribute 'isMerchant' is calculated. 1 if 'nameDest' starts with 'M', 0 - otherwise.
 \end{enumerate}
 
-Generally, the dataset and clean and structured, no other preprocessing, except for the described above is necessary. The potential issue is that it is highly unbalanced (less than 1\% of fraud transactions) and contains quite a small number of features (6) for model training. 
+Generally, the dataset is clean and structured; no other preprocessing, except for the described above, is necessary. The potential issue is that it is highly unbalanced (less than 1\% of fraud transactions) and contains quite a small number of features (6) for model training. 
 
 \begin{figure}[h!]
     \centering
@@ -303,7 +303,7 @@ The dataset contains transactions made by credit cards in September 2013 by Euro
 
 This dataset contains a relatively small amount of data compared to others (about 280k transactions). Therefore, we plan to keep it as an additional dataset in case of any issues with others.
 
-Since the data has already been processed, the only necessary transormation is to rename columns 'Amount' and 'Class' to 'amount', 'isFraud' respectively.
+Since the data has already been processed, the only necessary transformation is to rename columns 'Amount' and 'Class' to 'amount' and 'isFraud', respectively.
 
 \newpage
 
@@ -330,8 +330,8 @@ Below, we present the NiFi flows for the data acquisition. Processor failures ar
     \item EvaluateJsonPath - to evaluate whether any data is missing,
     \item ReplaceText - to add year, month, and day that is used for data partitioning in Hive,
     \item PublishKafkaRecord - to send the data to Kafka,
-    \item JoltTransformJSON - to preprocess the data into desired format,
-    \item UpdateAttribute - to add the hdfs path attribute to the data that depends on the year, month, and day,
+    \item JoltTransformJSON - to preprocess the data into the desired format,
+    \item UpdateAttribute - to add the HDFS path attribute to the data that depends on the year, month, and day,
     \item ConvertRecord - to convert the data to the Parquet format,
     \item LogMessage - to log the errors,
     \item PutHDFS - to store the data in HDFS.
@@ -452,7 +452,7 @@ We have tested 4 models for fraud detection and selected Random Forest as it pro
 The initial model is being trained locally with a spark on the collected 'train' portion of the datasets.
 As the next step, the streaming layer uses Spark Streaming in micro-batches mode to consume three Kafka streams and run predictions on them. Moreover, this module also includes the joining of these streams to produce additional insights.
 
-Additionally, we planned introduce periodic model retraining and model version menagement using MLflow. We have set up a separate container (services/mlflow) with MLflow server and a cron job to update the fraud classifier. The model artifacts are saved in a shared storage (Docker volume or, preferably, HDFS). The results of the job run are available in container logs or MLflow UI as shown on Figure \ref{fig:mlflowUi}. Unfortunately, we had issues connecting stream processing container to the artifacts storage, therefore, a localy pretrained model is used instread.
+Additionally, we planned to introduce periodic model retraining and model version management using MLflow. We have set up a separate container (services/mlflow) with an MLflow server and a cron job to update the fraud classifier. The model artifacts are saved in a shared storage (Docker volume or, preferably, HDFS). The results of the job run are available in container logs or MLflow UI, as shown in Figure \ref{fig:mlflowUi}. Unfortunately, we had issues connecting stream processing container to the artifacts storage, therefore, a localy pretrained model is used instread.
 
 \begin{figure}[H]
     \centering
@@ -546,7 +546,7 @@ The project of fraudulent transaction predictions has potential positive and neg
     \item Potential harm resulting from poor predictions.
     \item Some edge cases might have been missed, resulting in customer annoyance, such as false fraud predictions based on distance from the last transaction when going on holidays.
 \end{enumerate}
-The project has been realized with Big Data technologies, primarily based on Apache software and Docker, allowing for high fault tolerance and scalability. It is ready to handle incoming data robustly, representing the 5 Vs characteristics. However, for production-level quality, it should be extended with tools such as Kubernetes, allowing for seamless container scalability. It is worth pointing out that the whole system is resource expensive in regards to RAM, one needs to take that into consideration before planned deployment.
+The project has been realized with Big Data technologies, primarily based on Apache software and Docker, allowing for high fault tolerance and scalability. It is ready to handle incoming data robustly, representing the 5 Vs characteristics. However, for production-level quality, it should be extended with tools such as Kubernetes, allowing for seamless container scalability. It is worth pointing out that the whole system is resource-expensive in regards to RAM; one needs to take that into consideration before planned deployment.
 
 \section{Tasks assignment}
 
